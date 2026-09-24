@@ -1,174 +1,278 @@
-# LifeOps AI — Intelligent Personal Document & Application Operations Agent
+**LifeOps AI — Personal Operations Agent**
 
-> **Verify your information once. Reuse it safely across applications.**
+AI prepares. Humans approve. Every important action is auditable.
 
-LifeOps AI is a local-first web application prototype designed to solve fragmented administrative and bureaucratic workflows (government schemes, scholarships, identity certificates, education applications, and employment forms).
+LifeOps AI is a hackathon prototype for turning fragmented administrative tasks into one structured, reviewable workflow.
 
-Before an application is submitted, **LifeOps AI verifies whether the information across all user documents is internally consistent**, identifies potential rejection risks, prepares application forms strictly from verified document data, and requires **explicit field-level human approval** before mock submission.
+Instead of only answering questions, the prototype demonstrates an operations workflow that can understand a user's goal, organize relevant information, verify consistency, evaluate deterministic eligibility rules, prepare an application, pause for explicit human approval, perform a controlled mock execution, and record the workflow in an audit trail.
 
----
+Core Workflow
 
-## 1. Problem Statement
+USER GOAL
+   ↓
+PLAN
+   ↓
+DOCUMENTS
+   ↓
+VERIFY
+   ↓
+ELIGIBILITY
+   ↓
+PREPARE APPLICATION
+   ↓
+HUMAN APPROVAL
+   ↓
+CONTROLLED MOCK EXECUTION
+   ↓
+AUDIT TRAIL
 
-Every year, millions of citizens, students, and applicants face form rejections due to minor, preventable data discrepancies across personal identity documents:
-- **Name Spelling Inconsistencies:** e.g. "Arun Kumar" on Aadhaar vs. "Arun Kumarr" on an Income Certificate.
-- **Date Formatting Conflicts:** e.g. "14-07-2006" vs "14/07/2006" causing automated portal flags.
-- **Unverified Data Reuse:** Manual copy-pasting of sensitive numbers into official forms leads to errors.
-- **Lack of Provenance & Auditability:** No clear record of which document provided which field or who authorized the submission.
+What the Current Prototype Demonstrates
 
----
+Goal-driven agent workflow orchestration
 
-## 2. Solution & Core Innovation
+Personal document workspace / Document Vault
 
-LifeOps AI introduces a trustworthy, human-in-the-loop civic operations model:
+Structured demo document data and simulated extraction flow
 
-```text
-DOCUMENTS → PROFILE → CONSISTENCY CHECK → ELIGIBILITY → DRAFT APPLICATION → HUMAN APPROVAL → MOCK SUBMISSION → AUDIT TRAIL
-```
+Cross-document consistency verification
 
-### Key Pillars:
-1. **Document Vault:** Local vault holding structured personal documents (Aadhaar, Marksheets, Income Certificates, Passbooks).
-2. **Deterministic Consistency Engine:** Performs field-level cross-document verification, string normalization, date parsing, and edit-distance mismatch detection.
-3. **Rule-Based Eligibility Engine:** Evaluates applicant document metrics against administrative scheme requirements (income ceilings, age ranges, academic thresholds, residency).
-4. **Verified Application Drafting:** Auto-populates application forms using **ONLY** data from verified vault fields, preserving source provenance for every field.
-5. **Field-Level Human Approval Center:** Requires explicit user verification and check-offs for every field before authorizing submission.
-6. **Immutable Audit Trail:** Append-only local ledger recording all document additions, verification checks, acknowledgments, approvals, and submissions.
+Missing/conflicting information detection
 
----
+Deterministic eligibility evaluation
 
-## 3. Technical Architecture
+Prototype opportunity discovery using seeded/demo records
 
-```text
-                     +---------------------------------------+
-                     |         Personal Document Vault       |
-                     |  (Aadhaar, Marksheet, Income, Bank)   |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |    Deterministic Consistency Engine   |
-                     | (Normalized Names, Dates, Levenshtein)|
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |       Verified Personal Profile       |
-                     |      (Full Document Provenance)        |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |     Opportunity Eligibility Engine    |
-                     | (Schemes, Scholarships, Certificates) |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |      Application Draft Generator      |
-                     |    (Sourced Strictly from Vault Data) |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |  Field-Level Human Approval Center    |
-                     |   (Mandatory Checkboxes & Consent)    |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |            Mock Submission            |
-                     |    (Ref ID: LO-2026-XXXXXX Generated) |
-                     +---------------------------------------+
-                                         |
-                                         v
-                     +---------------------------------------+
-                     |        Immutable Audit Ledger         |
-                     |       (Append-Only Event Records)     |
-                     +---------------------------------------+
-```
+Application draft preparation from verified profile information
 
----
+Field-level data provenance
 
-## 4. Technology Stack
+Privacy-aware data minimization and sensitive-value masking
 
-- **Framework:** React 18 + TypeScript
-- **Build Tool:** Vite
-- **Icons:** Lucide React
-- **Styling:** Custom Civic Tech Utility CSS Design System
-- **Persistence:** LocalStorage (Offline, 100% Client-side)
-- **Logic:** 100% Deterministic Rule Engine (No external API keys required)
+Human field-level approval and final declaration
 
----
+Centralized submission guard
 
-## 5. Running Locally
+Idempotent mock/sandbox submission adapter
 
-### Prerequisites
-- Node.js (v18 or higher)
-- npm
+Cryptographically linked audit events with SHA-256 hashing
 
-### Installation Commands
+User-scoped browser persistence for the prototype
 
-```bash
-# 1. Clone or open project directory
-cd "LifeOps AI project"
+English / Tamil / Hindi interface localization support
 
-# 2. Install dependencies
+Demo A: mismatch case
+
+Demo B: clean case
+
+Important Prototype Disclosure
+
+This repository contains a hackathon prototype, not a production government-service platform.
+
+The current demo uses local/browser persistence and simulated or seeded data where external integrations are not connected. In particular:
+
+Document/OCR processing shown in the demo is simulated/prototype behavior.
+
+Opportunities are seeded/demo records and are not a live synchronized opportunity database.
+
+The application execution flow uses a Mock/Sandbox Submission Provider.
+
+No real government portal is submitted to from this prototype.
+
+The current agent workflow uses local/deterministic orchestration; a production LLM infrastructure layer is a future architecture option.
+
+Supabase schema/RLS integration is included as architecture for future backend deployment, but the current demo may operate through the local fallback when Supabase environment variables are not configured.
+
+Production-grade authentication, encrypted document storage, external API integrations, and live portal automation are outside the current prototype scope.
+
+The prototype is designed to demonstrate the product architecture and governance model honestly without pretending that future integrations are already live.
+
+Key Product Ideas
+
+1. Goal-driven workflow
+
+A user can start with a natural-language administrative goal, such as:
+
+"Find a student support opportunity I qualify for and prepare the application for my review."
+
+LifeOps converts the goal into a structured workflow rather than leaving the user with a chatbot response.
+
+2. Cross-document verification
+
+The verification engine compares structured information from available demo documents and surfaces inconsistencies instead of silently choosing a value.
+
+The demo includes a mismatch case such as:
+
+Aadhaar       → Arun Kumar
+Marksheet     → Arun Kumar
+Bank          → Arun Kumar
+Income Cert.  → Arun Kumarr
+
+The discrepancy can be acknowledged and remains visible in the workflow/audit history.
+
+3. Deterministic eligibility
+
+Opportunity criteria are evaluated against the available structured profile data.
+
+The demo can evaluate criteria such as:
+
+age range
+
+family income
+
+Tamil Nadu domicile
+
+academic score
+
+The UI exposes the requirement, actual value, and evaluation result.
+
+4. Privacy and data minimization
+
+LifeOps is designed around the principle that an application should use only information required for its purpose.
+
+For example, if PAN is not required for a particular demo workflow, it should not be unnecessarily passed into the application-preparation context.
+
+Sensitive values such as Aadhaar and bank account numbers are masked in appropriate UI contexts.
+
+5. Human approval
+
+LifeOps does not silently execute sensitive application actions.
+
+Before the controlled execution step, the user reviews the prepared fields, their provenance, and the final declaration.
+
+The submission guard requires the necessary approval conditions before mock execution can proceed.
+
+6. Auditability
+
+Important workflow actions are recorded as linked audit events.
+
+The prototype includes integrity verification for the audit chain and a tamper-test demonstration.
+
+Technology
+
+React 18
+
+TypeScript
+
+Vite
+
+React Router
+
+Lucide React
+
+Browser/local persistence for the prototype
+
+Optional Supabase architecture and PostgreSQL/RLS schema
+
+Web Crypto SHA-256 hashing / compatible local SHA-256 fallback
+
+Project Structure
+
+src/
+├── components/       UI components and layout
+├── context/          Notifications and localization
+├── data/             Demo documents, applications and opportunities
+├── engine/            Agent, auth, privacy, verification and eligibility logic
+├── lib/               Supabase client configuration
+├── pages/             Product workflow screens
+├── services/          Backend and mock submission adapters
+├── tests/             Automated prototype checks
+├── utils/             Storage, comparison and audit utilities
+└── types/             Shared TypeScript models
+
+supabase/
+└── schema.sql        Future/backend database schema and RLS policies
+
+Local Development
+
 npm install
-
-# 3. Start development server
 npm run dev
-```
 
-The application will be available at `http://localhost:3000`.
+Open the local Vite URL shown in the terminal, normally:
 
----
+http://localhost:5173/
 
-## 6. Hackathon Judge Step-by-Step Demo Flow
+Validation
 
-Follow these steps to demonstrate the complete workflow during judging:
+Run the automated prototype checks:
 
-### Scenario A — Mismatch Detection Demo
-1. **Open Dashboard:** Observe 4 documents in vault, 18 fields verified, and **1 Issue Detected**.
-2. **Header Switcher:** Ensure **"Demo A — Mismatch Case"** is active.
-3. **Open Verification Engine:**
-   - Observe the yellow warning card: `⚠ MISMATCH DETECTED: Full Name`.
-   - View side-by-side comparison: Aadhaar Card (`"Arun Kumar"`) vs. Income Certificate (`"Arun Kumarr"`).
-   - Read the neutral procedural recommendation.
-   - Click **"Acknowledge & Continue"** to authorize drafting while preserving the audit record.
+npm run test
 
-### Scenario B — Successful Clean Submission Demo
-1. **Header Switcher:** Click **"Demo B — Clean Case"** in the top navigation bar.
-2. **Verification Engine:** Observe all fields update to `✓ ALL FIELDS VERIFIED`.
-3. **Open Opportunity Center:**
-   - Review rule engine evaluation for **State Student Support Scheme** (4/4 Criteria Satisfied).
-   - Click **"Create Application Draft"**.
-4. **Open Applications:**
-   - Inspect prepared draft fields. Notice that every field has explicit provenance tags (e.g., Source: `Aadhaar Card`, `Income Certificate`).
-   - Click **"Proceed to Field-Level Approval Center"**.
-5. **Approval Center:**
-   - Notice the submit button is initially disabled.
-   - Click **"Select All Field Approvals"** or check each field checkbox.
-   - Observe sensitive field flags (`🔒 Sensitive` for Aadhaar and Bank numbers).
-   - Check the declaration box: *"I have reviewed all field values above..."*.
-   - Click **"Approve & Submit Application"** and confirm the modal dialog.
-   - View the generated submission receipt with Reference ID `LO-2026-XXXXXX`.
-6. **Open Audit Trail:**
-   - Inspect the chronological append-only ledger displaying all events: `DOCUMENT_ADDED`, `VERIFICATION_RUN`, `APPLICATION_DRAFTED`, `FIELD_APPROVED`, `APPLICATION_SUBMITTED`.
+Run TypeScript validation:
 
----
+npm run lint
 
-## 7. Limitations & Prototype Boundaries
+Build the production bundle:
 
-- **Simulated OCR:** Document text extraction is simulated from realistic local mock structures.
-- **Mock Submission:** No real government portal or external endpoint is contacted.
-- **Local Storage Data:** Prototype state persists in browser `localStorage`.
-- **Fictional Data:** All names, addresses, Aadhaar numbers, and bank details are completely fictional test data.
+npm run build
 
----
+The final prototype should pass the automated checks and produce a successful Vite build before deployment.
 
-## 8. Future Scope & Production Roadmap
+Demo Scenarios
 
-1. **Local AI / Vision OCR Integration:** Integrate WebGPU-based Tesseract/ONNX models for zero-server document extraction.
-2. **Zero-Knowledge Encryption:** Encrypt vault data locally using AES-GCM with user-held passphrase.
-3. **Browser Automation Engine:** Execute client-side Playwright/Puppeteer script automations for authorized portal submissions under active user review.
-4. **Multilingual Resolution:** Support regional script variations (e.g. Tamil / Hindi to English name transliteration verification).
+Demo A — Name Mismatch
+
+Demonstrates:
+
+Documents
+   ↓
+Cross-document comparison
+   ↓
+Name discrepancy detected
+   ↓
+User acknowledgement
+   ↓
+Audit event
+   ↓
+Workflow continues when the discrepancy is non-critical
+
+Demo B — Clean Case
+
+Demonstrates:
+
+Verified information
+   ↓
+Eligibility passes
+   ↓
+Application draft
+   ↓
+Human field approval
+   ↓
+Human declaration
+   ↓
+Mock submission
+   ↓
+Audit trail
+
+Future / Production Architecture
+
+The submitted concept is designed to scale beyond the current prototype.
+
+Future production work can include:
+
+FastAPI/Flask backend services
+
+PostgreSQL-backed application state
+
+OAuth / production identity management
+
+encrypted document storage
+
+real OCR/document intelligence
+
+LLM-powered planning and reasoning
+
+authoritative opportunity feeds
+
+external application/portal APIs
+
+production cloud deployment
+
+stronger server-side audit and authorization controls
+
+These are future architecture items, not claims that the current hackathon prototype already provides those live integrations.
+
+Hackathon Demo
+
+The current prototype is intended to demonstrate the following product principle:
+
+From finding an opportunity to safely preparing and completing the application — with verification, human approval, and auditability built into the workflow.
