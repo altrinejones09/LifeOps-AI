@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FileText, 
   ShieldCheck, 
@@ -7,19 +8,26 @@ import {
   Clock, 
   ArrowRight, 
   CheckCircle2,
-  Lock,
-  ChevronRight
+  FolderLock,
+  ChevronRight,
+  Zap
 } from 'lucide-react';
 import { AppState } from '../utils/storage';
 import { NavTab } from '../components/Layout/Sidebar';
 
 interface DashboardProps {
   state: AppState;
-  onNavigate: (tab: NavTab) => void;
+  onNavigate?: (tab: NavTab) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ state, onNavigate }) => {
+  const navigate = useNavigate();
   const { documents, discrepancies, applications } = state;
+
+  const handleGoTo = (route: string, tab: NavTab) => {
+    if (onNavigate) onNavigate(tab);
+    navigate(route);
+  };
 
   const totalDocuments = documents.length;
   const verifiedFieldsCount = documents.reduce((acc, doc) => acc + doc.fields.length, 0);
@@ -28,351 +36,298 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onNavigate }) => {
   const pendingApprovalCount = applications.filter(a => a.status === 'DRAFT' || a.status === 'PENDING_APPROVAL').length;
   const submittedCount = applications.filter(a => a.status === 'SUBMITTED').length;
 
-  // Compute status for the 8 workflow steps
-  const getStepStatus = (stepIndex: number) => {
-    // 0: DOCUMENTS, 1: PROFILE, 2: VERIFICATION, 3: ELIGIBILITY, 4: APPLICATION DRAFT, 5: HUMAN APPROVAL, 6: SUBMISSION, 7: AUDIT TRAIL
-    if (stepIndex === 0) return { label: 'Completed', color: '#15803d', bg: '#f0fdf4' };
-    if (stepIndex === 1) return { label: 'Completed', color: '#15803d', bg: '#f0fdf4' };
-    if (stepIndex === 2) {
-      if (issueCount > 0) return { label: 'Warning', color: '#b45309', bg: '#fffbeb' };
-      return { label: 'Verified', color: '#15803d', bg: '#f0fdf4' };
+  // Determine Next Best Action dynamically
+  const getNextBestAction = () => {
+    if (issueCount > 0) {
+      return {
+        title: `Review ${issueCount} identity discrepancy ${issueCount === 1 ? 'issue' : 'issues'}`,
+        desc: 'Verification engine detected name/date variance across documents. Review and acknowledge to proceed.',
+        buttonText: 'Review Verification Issues',
+        route: '/verification',
+        tab: 'verification' as NavTab,
+        color: '#b45309',
+        bg: 'rgba(245, 158, 11, 0.15)',
+        icon: AlertTriangle
+      };
     }
-    if (stepIndex === 3) return { label: 'Completed', color: '#15803d', bg: '#f0fdf4' };
-    if (stepIndex === 4) {
-      if (applications.length > 0) return { label: 'Draft Ready', color: '#1d4ed8', bg: '#eff6ff' };
-      return { label: 'Pending', color: '#64748b', bg: '#f8fafc' };
+
+    if (pendingApprovalCount > 0) {
+      const targetApp = applications.find(a => a.status !== 'SUBMITTED');
+      return {
+        title: `Authorize field approval for "${targetApp?.opportunityTitle || 'Application'}"`,
+        desc: 'Draft application generated from verified vault data requires 100% human field-level review.',
+        buttonText: 'Go to Approval Center',
+        route: '/approval',
+        tab: 'approval' as NavTab,
+        color: '#3b82f6',
+        bg: 'rgba(59, 130, 246, 0.15)',
+        icon: Clock
+      };
     }
-    if (stepIndex === 5) {
-      if (submittedCount > 0) return { label: 'Approved', color: '#15803d', bg: '#f0fdf4' };
-      if (pendingApprovalCount > 0) return { label: 'Pending Action', color: '#b45309', bg: '#fffbeb' };
-      return { label: 'Locked', color: '#94a3b8', bg: '#f8fafc' };
+
+    if (totalDocuments === 0) {
+      return {
+        title: 'Upload your first verified document',
+        desc: 'Add Aadhaar, Marksheet, or Income Certificate to your Document Vault.',
+        buttonText: 'Upload Documents',
+        route: '/vault',
+        tab: 'vault' as NavTab,
+        color: '#10b981',
+        bg: 'rgba(16, 185, 129, 0.15)',
+        icon: FolderLock
+      };
     }
-    if (stepIndex === 6) {
-      if (submittedCount > 0) return { label: 'Submitted', color: '#15803d', bg: '#f0fdf4' };
-      return { label: 'Locked', color: '#94a3b8', bg: '#f8fafc' };
-    }
-    if (stepIndex === 7) {
-      return { label: 'Active Ledger', color: '#4338ca', bg: '#e0e7ff' };
-    }
-    return { label: 'Pending', color: '#64748b', bg: '#f8fafc' };
+
+    return {
+      title: 'Discover eligible scholarships & opportunities',
+      desc: 'Run rule-based eligibility evaluation against verified vault fields.',
+      buttonText: 'Explore Opportunities',
+      route: '/opportunities',
+      tab: 'opportunities' as NavTab,
+      color: '#8b5cf6',
+      bg: 'rgba(139, 92, 246, 0.15)',
+      icon: Sparkles
+    };
   };
 
-  const workflowSteps = [
-    { title: 'DOCUMENTS', desc: 'Vault Loaded', tab: 'vault' as NavTab },
-    { title: 'PROFILE', desc: 'Structured Provenance', tab: 'vault' as NavTab },
-    { title: 'VERIFICATION', desc: 'Consistency Check', tab: 'verification' as NavTab },
-    { title: 'ELIGIBILITY', desc: 'Rules Evaluation', tab: 'opportunities' as NavTab },
-    { title: 'APPLICATION DRAFT', desc: 'Vault Data Population', tab: 'applications' as NavTab },
-    { title: 'HUMAN APPROVAL', desc: 'Field-Level Consent', tab: 'approval' as NavTab },
-    { title: 'SUBMISSION', desc: 'Mock Authorization', tab: 'approval' as NavTab },
-    { title: 'AUDIT TRAIL', desc: 'Immutable Ledger', tab: 'audit' as NavTab }
-  ];
+  const nextAction = getNextBestAction();
+  const NextIcon = nextAction.icon;
 
   return (
-    <div>
-      {/* Header Banner - UPGRADE #23 & #26 */}
-      <div className="page-header" style={{
+    <div style={{ color: '#f8fafc' }}>
+      {/* Header Banner */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0f172a',
         padding: '28px 32px',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        border: '1px solid #1e293b',
         marginBottom: '24px',
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'
+        background: 'radial-gradient(circle at 10% 20%, rgba(37, 99, 235, 0.15) 0%, transparent 50%), #0f172a'
       }}>
         <div style={{ maxWidth: '640px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span className="badge badge-info" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Autonomous Personal Operations AI
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: 700, color: '#4338ca', backgroundColor: '#e0e7ff', padding: '2px 8px', borderRadius: '4px' }}>
-              🔒 Local Demo Mode
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase' }}>
+              Personal Operations Platform
             </span>
           </div>
-          <h1 className="page-title" style={{ fontSize: '24px', margin: 0 }}>
-            LifeOps AI — Personal Operations Agent
+          <h1 style={{ fontSize: '26px', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+            Operations Control Dashboard
           </h1>
-          <p className="page-subtitle" style={{ fontSize: '14px', color: '#475569', marginTop: '6px', lineHeight: 1.5 }}>
-            Verify identity once from structured document vault. Discover opportunities, run rule evaluations, draft applications, and authorize mock submissions with 100% human consent.
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '6px', lineHeight: 1.5 }}>
+            Automating application workflows while keeping human approval in 100% control of identity, eligibility, and authorization.
           </p>
         </div>
+
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => onNavigate('agent')}
-            className="btn btn-primary"
-            style={{ padding: '10px 18px' }}
+            onClick={() => handleGoTo('/agent', 'agent')}
+            style={{
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 18px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+            }}
           >
             <Sparkles size={16} />
             Open Agent Workspace
           </button>
-          <button
-            onClick={() => onNavigate('vault')}
-            className="btn btn-outline"
-            style={{ padding: '10px 18px' }}
-          >
-            Document Vault
-          </button>
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Next Best Action Spotlight */}
+      <div style={{
+        backgroundColor: '#0f172a',
+        border: `1px solid ${nextAction.color}`,
+        borderRadius: '12px',
+        padding: '20px 24px',
+        marginBottom: '28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '20px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '10px',
+            backgroundColor: nextAction.bg,
+            color: nextAction.color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <NextIcon size={22} />
+          </div>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 700, color: nextAction.color, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Zap size={12} /> Next Best Action
+            </div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: '2px 0 0' }}>
+              {nextAction.title}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#94a3b8', margin: '2px 0 0' }}>
+              {nextAction.desc}
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => handleGoTo(nextAction.route, nextAction.tab)}
+          style={{
+            backgroundColor: nextAction.color,
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '10px 18px',
+            fontSize: '13px',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            flexShrink: 0
+          }}
+        >
+          {nextAction.buttonText}
+          <ArrowRight size={16} />
+        </button>
+      </div>
+
+      {/* Metrics Grid */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
         gap: '16px',
         marginBottom: '32px'
       }}>
-        <div className="card">
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
-            Documents
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+            Documents Vault
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: '4px 0' }}>
             {totalDocuments}
           </div>
-          <div style={{ fontSize: '12px', color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <CheckCircle2 size={13} /> Active in Vault
+          <div style={{ fontSize: '12px', color: '#22c55e', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CheckCircle2 size={13} /> Active Uploads
           </div>
         </div>
 
-        <div className="card">
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
             Fields Verified
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: '4px 0' }}>
             {verifiedFieldsCount}
           </div>
-          <div style={{ fontSize: '12px', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ShieldCheck size={13} /> Full Provenance
+          <div style={{ fontSize: '12px', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <ShieldCheck size={13} /> Vault Attributes
           </div>
         </div>
 
-        <div className="card" style={{ borderColor: issueCount > 0 ? '#fef08a' : '#e2e8f0' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
-            Issues Detected
+        <div style={{ backgroundColor: '#0f172a', border: `1px solid ${issueCount > 0 ? '#b45309' : '#1e293b'}`, borderRadius: '10px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+            Verification Issues
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: issueCount > 0 ? '#b45309' : '#15803d', margin: '4px 0' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: issueCount > 0 ? '#f59e0b' : '#22c55e', margin: '4px 0' }}>
             {issueCount}
           </div>
-          <div style={{ fontSize: '12px', color: issueCount > 0 ? '#b45309' : '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <div style={{ fontSize: '12px', color: issueCount > 0 ? '#f59e0b' : '#22c55e', display: 'flex', alignItems: 'center', gap: '4px' }}>
             {issueCount > 0 ? <AlertTriangle size={13} /> : <CheckCircle2 size={13} />}
-            {issueCount > 0 ? 'Requires Review' : 'All Clear'}
+            {issueCount > 0 ? 'Requires Review' : 'Zero Discrepancies'}
           </div>
         </div>
 
-        <div className="card">
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
             Applications
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: '#0f172a', margin: '4px 0' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#ffffff', margin: '4px 0' }}>
             {applications.length}
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <FileText size={13} /> Active Administrative
+          <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <FileText size={13} /> Active Workflows
           </div>
         </div>
 
-        <div className="card" style={{ borderColor: pendingApprovalCount > 0 ? '#bfdbfe' : '#e2e8f0' }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
+        <div style={{ backgroundColor: '#0f172a', border: `1px solid ${pendingApprovalCount > 0 ? '#2563eb' : '#1e293b'}`, borderRadius: '10px', padding: '16px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase' }}>
             Pending Approval
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 700, color: pendingApprovalCount > 0 ? '#1d4ed8' : '#64748b', margin: '4px 0' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: pendingApprovalCount > 0 ? '#60a5fa' : '#64748b', margin: '4px 0' }}>
             {pendingApprovalCount}
           </div>
-          <div style={{ fontSize: '12px', color: pendingApprovalCount > 0 ? '#1d4ed8' : '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Clock size={13} /> Awaiting Consent
+          <div style={{ fontSize: '12px', color: pendingApprovalCount > 0 ? '#60a5fa' : '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Clock size={13} /> Awaiting Approval
           </div>
         </div>
       </div>
 
-      {/* Workflow Visualization Pipeline */}
-      <div className="card" style={{ marginBottom: '32px', padding: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
-              Application Lifecycle Operations Workflow
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748b' }}>
-              LifeOps AI enforces human verification and approval at every stage before submission.
-            </p>
-          </div>
-          <span className="badge badge-info">
-            Deterministic Pipeline
-          </span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(8, 1fr)',
-          gap: '8px',
-          alignItems: 'stretch'
-        }}>
-          {workflowSteps.map((step, idx) => {
-            const status = getStepStatus(idx);
-            return (
-              <div
-                key={step.title}
-                onClick={() => onNavigate(step.tab)}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  padding: '12px 10px',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'all 0.15s ease',
-                  position: 'relative'
-                }}
-                className="card-hover"
-              >
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  color: '#475569',
-                  letterSpacing: '0.04em',
-                  marginBottom: '4px'
-                }}>
-                  0{idx + 1}. {step.title}
-                </div>
-                <div style={{
-                  fontSize: '11px',
-                  color: '#64748b',
-                  marginBottom: '10px',
-                  minHeight: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  {step.desc}
-                </div>
-                <div style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  backgroundColor: status.bg,
-                  color: status.color,
-                  display: 'inline-block'
-                }}>
-                  {status.label}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Two-Column Content: Current Attention & Active Applications */}
+      {/* Two Column Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         
-        {/* Current Attention Section */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangle size={18} color={issueCount > 0 ? '#b45309' : '#15803d'} />
-              Current Attention
-            </h3>
-            <span style={{ fontSize: '12px', color: '#64748b' }}>
-              Consistency Status
-            </span>
-          </div>
+        {/* Verification & Attention */}
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShieldCheck size={18} color="#3b82f6" />
+            Vault Verification Status
+          </h3>
 
           {issueCount > 0 ? (
-            <div style={{
-              backgroundColor: '#fffbeb',
-              border: '1px solid #fef08a',
-              borderRadius: '6px',
-              padding: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: '#fef3c7',
-                  color: '#b45309',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <AlertTriangle size={18} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#92400e', margin: 0 }}>
-                    ⚠ Identity mismatch detected
-                  </h4>
-                  <p style={{ fontSize: '13px', color: '#78350f', marginTop: '6px', lineHeight: 1.5 }}>
-                    Name differs between <strong>Aadhaar Card</strong> ("Arun Kumar") and <strong>Income Certificate</strong> ("Arun Kumarr").
-                  </p>
-                  <p style={{ fontSize: '12px', color: '#92400e', marginTop: '6px' }}>
-                    Review discrepancy before using this information in official administrative applications.
-                  </p>
-
-                  <button
-                    onClick={() => onNavigate('verification')}
-                    className="btn btn-sm btn-primary"
-                    style={{ marginTop: '14px', backgroundColor: '#b45309', borderColor: '#92400e' }}
-                  >
-                    Review Discrepancy
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
+            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid #b45309', borderRadius: '8px', padding: '16px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#fde68a', marginBottom: '4px' }}>
+                ⚠ Name Mismatch Detected
               </div>
+              <div style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: 1.5, marginBottom: '14px' }}>
+                Identity variance found between uploaded Aadhaar and Income Certificate documents.
+              </div>
+              <button
+                onClick={() => handleGoTo('/verification', 'verification')}
+                style={{ backgroundColor: '#b45309', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Review Discrepancy
+              </button>
             </div>
           ) : (
-            <div style={{
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              borderRadius: '6px',
-              padding: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: '#dcfce7',
-                  color: '#15803d',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <CheckCircle2 size={18} />
-                </div>
-                <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#166534', margin: 0 }}>
-                    ✓ Vault Information Verified
-                  </h4>
-                  <p style={{ fontSize: '13px', color: '#15803d', marginTop: '6px' }}>
-                    All verified identity fields across your available documents are internally consistent.
-                  </p>
-                  <button
-                    onClick={() => onNavigate('opportunities')}
-                    className="btn btn-sm btn-primary"
-                    style={{ marginTop: '14px', backgroundColor: '#15803d', borderColor: '#166534' }}
-                  >
-                    Explore Matched Opportunities
-                    <ArrowRight size={14} />
-                  </button>
-                </div>
+            <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)', border: '1px solid #15803d', borderRadius: '8px', padding: '16px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: '#86efac', marginBottom: '4px' }}>
+                ✓ Vault Attributes Clean & Consistent
               </div>
+              <div style={{ fontSize: '12px', color: '#cbd5e1', marginBottom: '14px' }}>
+                All document vault attributes match with zero unresolved identity discrepancies.
+              </div>
+              <button
+                onClick={() => handleGoTo('/opportunities', 'opportunities')}
+                style={{ backgroundColor: '#15803d', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Explore Opportunities
+              </button>
             </div>
           )}
         </div>
 
-        {/* Active Applications Section */}
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={18} color="#2563eb" />
+        {/* Active Applications list */}
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <FileText size={18} color="#60a5fa" />
               Active Applications
             </h3>
             <button
-              onClick={() => onNavigate('applications')}
-              style={{ fontSize: '12px', fontWeight: 600, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer' }}
+              onClick={() => handleGoTo('/applications', 'applications')}
+              style={{ background: 'none', border: 'none', color: '#60a5fa', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
             >
               View All ({applications.length})
             </button>
@@ -380,81 +335,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ state, onNavigate }) => {
 
           {applications.length > 0 ? (
             applications.map(app => (
-              <div
-                key={app.id}
-                style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '6px',
-                  padding: '16px',
-                  marginBottom: '12px',
-                  backgroundColor: '#f8fafc'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div key={app.id} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '14px', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                      {app.opportunityTitle}
-                    </h4>
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                      Authority: {app.authority}
-                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>{app.opportunityTitle}</div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>{app.authority}</div>
                   </div>
-                  <span className={`badge ${app.status === 'SUBMITTED' ? 'badge-verified' : 'badge-info'}`}>
-                    {app.status === 'SUBMITTED' ? 'SUBMITTED' : 'Draft Ready'}
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', backgroundColor: app.status === 'SUBMITTED' ? '#14532d' : '#1e3a8a', color: app.status === 'SUBMITTED' ? '#86efac' : '#93c5fd' }}>
+                    {app.status}
                   </span>
                 </div>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '8px',
-                  marginTop: '12px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid #e2e8f0',
-                  fontSize: '12px'
-                }}>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Verification:</span>{' '}
-                    <strong style={{ color: issueCount > 0 ? '#b45309' : '#15803d' }}>
-                      {issueCount > 0 ? 'Acknowledged' : 'Passed'}
-                    </strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Approval:</span>{' '}
-                    <strong style={{ color: app.status === 'SUBMITTED' ? '#15803d' : '#1d4ed8' }}>
-                      {app.status === 'SUBMITTED' ? 'Approved' : 'Pending'}
-                    </strong>
-                  </div>
-                  <div>
-                    <span style={{ color: '#64748b' }}>Deadline:</span>{' '}
-                    <strong>28 Sep 2026</strong>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'flex-end' }}>
-                  {app.status === 'SUBMITTED' ? (
-                    <button
-                      onClick={() => onNavigate('audit')}
-                      className="btn btn-sm btn-outline"
-                    >
-                      View Audit Event
-                      <ChevronRight size={14} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onNavigate('approval')}
-                      className="btn btn-sm btn-accent"
-                    >
-                      Proceed to Approval Center
-                      <ArrowRight size={14} />
-                    </button>
-                  )}
+                <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => handleGoTo(app.status === 'SUBMITTED' ? '/audit' : '/approval', app.status === 'SUBMITTED' ? 'audit' : 'approval')}
+                    style={{ backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    {app.status === 'SUBMITTED' ? 'View Audit' : 'Proceed to Approval'}
+                    <ChevronRight size={14} />
+                  </button>
                 </div>
               </div>
             ))
           ) : (
-            <div style={{ textAlign: 'center', padding: '32px 16px', color: '#64748b' }}>
-              No active application drafts. Select an opportunity to start.
+            <div style={{ textAlign: 'center', padding: '24px', color: '#64748b', fontSize: '13px' }}>
+              No applications drafted yet.
             </div>
           )}
         </div>

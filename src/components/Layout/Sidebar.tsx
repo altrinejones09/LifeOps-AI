@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Bot,
@@ -12,6 +13,7 @@ import {
   Shield,
   User
 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export type NavTab = 
   | 'dashboard'
@@ -27,8 +29,8 @@ export type NavTab =
   | 'profile';
 
 interface SidebarProps {
-  currentTab: NavTab;
-  onSelectTab: (tab: NavTab) => void;
+  currentTab?: NavTab;
+  onSelectTab?: (tab: NavTab) => void;
   issueCount: number;
   pendingApprovalCount: number;
 }
@@ -39,70 +41,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
   issueCount,
   pendingApprovalCount
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useLanguage();
+
+  const currentPathSegment = location.pathname.split('/')[1] || 'dashboard';
+
   const navItems = [
     {
       id: 'dashboard' as NavTab,
-      label: 'Dashboard',
+      route: '/dashboard',
+      label: t.navDashboard,
       icon: LayoutDashboard
     },
     {
       id: 'agent' as NavTab,
-      label: 'Agent Workspace',
+      route: '/agent',
+      label: t.navAgent,
       icon: Bot,
       badge: 'Core',
       badgeType: 'info'
     },
     {
       id: 'vault' as NavTab,
-      label: 'Document Vault',
+      route: '/vault',
+      label: t.navVault,
       icon: FolderLock
     },
-
     {
       id: 'verification' as NavTab,
-      label: 'Verification Engine',
+      route: '/verification',
+      label: t.navVerification,
       icon: ShieldAlert,
       badge: issueCount > 0 ? `${issueCount} Issue` : undefined,
       badgeType: 'warning'
     },
     {
       id: 'opportunities' as NavTab,
-      label: 'Opportunities',
+      route: '/opportunities',
+      label: t.navOpportunities,
       icon: Sparkles
     },
     {
       id: 'applications' as NavTab,
-      label: 'Applications',
+      route: '/applications',
+      label: t.navApplications,
       icon: FileText
     },
     {
       id: 'approval' as NavTab,
-      label: 'Approval Center',
+      route: '/approval',
+      label: t.navApproval,
       icon: CheckSquare,
       badge: pendingApprovalCount > 0 ? `${pendingApprovalCount} Pending` : undefined,
       badgeType: 'info'
     },
     {
       id: 'audit' as NavTab,
-      label: 'Audit Trail',
+      route: '/audit',
+      label: t.navAudit,
       icon: History
     },
     {
       id: 'history' as NavTab,
-      label: 'Agent Run History',
+      route: '/history',
+      label: t.navHistory,
       icon: History
     },
     {
       id: 'privacy' as NavTab,
-      label: 'Privacy & Security',
+      route: '/privacy',
+      label: t.navPrivacy,
       icon: Shield
     },
     {
       id: 'profile' as NavTab,
-      label: 'User Profile',
+      route: '/profile',
+      label: t.navProfile,
       icon: User
     }
   ];
+
+  const handleNavigate = (id: NavTab, route: string) => {
+    if (onSelectTab) {
+      onSelectTab(id);
+    }
+    navigate(route);
+  };
 
   return (
     <aside style={{
@@ -115,7 +140,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       borderRight: '1px solid #1e293b'
     }}>
       {/* Brand Header */}
-      <div style={{ padding: '24px 20px', borderBottom: '1px solid #1e293b' }}>
+      <div 
+        onClick={() => handleNavigate('dashboard', '/dashboard')}
+        style={{ padding: '24px 20px', borderBottom: '1px solid #1e293b', cursor: 'pointer' }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             width: '36px',
@@ -156,12 +184,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
         {navItems.map(item => {
           const Icon = item.icon;
-          const isActive = currentTab === item.id;
+          const isActive = currentPathSegment === item.id || currentTab === item.id;
 
           return (
             <button
               key={item.id}
-              onClick={() => onSelectTab(item.id)}
+              onClick={() => handleNavigate(item.id, item.route)}
               style={{
                 width: '100%',
                 display: 'flex',
@@ -220,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             boxShadow: '0 0 8px #22c55e'
           }} />
           <span style={{ fontSize: '13px', fontWeight: 500, color: '#e2e8f0' }}>
-            Local Demo Mode
+            Prototype Operations
           </span>
         </div>
       </div>

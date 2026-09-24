@@ -5,7 +5,6 @@ import {
   Phone, 
   MapPin, 
   Calendar, 
-  ShieldCheck, 
   Lock, 
   Edit3, 
   Save, 
@@ -14,10 +13,13 @@ import {
   Sliders, 
   Bell, 
   Globe,
-  LogOut
+  LogOut,
+  Clock
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { calculateProfileCompletion } from '../engine/authService';
+import { useNotification } from '../context/NotificationContext';
+import { useLanguage, SupportedLanguage } from '../context/LanguageContext';
 
 interface UserProfilePageProps {
   user: UserProfile;
@@ -30,6 +32,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   onUpdateProfile,
   onSignOut
 }) => {
+  const { showToast } = useNotification();
+  const { language: globalLanguage, setLanguage: setGlobalLanguage } = useLanguage();
   const [isEditing, setIsEditing] = useState<boolean>(false);
   
   // Editable Form State
@@ -38,14 +42,18 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
   const [location, setLocation] = useState<string>(user.location || '');
   const [dateOfBirth, setDateOfBirth] = useState<string>(user.dateOfBirth || '');
   const [avatar, setAvatar] = useState<string>(user.avatar || 'US');
-  const [language, setLanguage] = useState<string>(user.preferences.language || 'English (US)');
+  const [language, setLanguage] = useState<string>(globalLanguage || user.preferences.language || 'English (US)');
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(user.preferences.notificationsEnabled);
-  const [savedSuccessAlert, setSavedSuccessAlert] = useState<boolean>(false);
 
   const completionPct = calculateProfileCompletion(user);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      showToast('Full name cannot be empty', 'ERROR');
+      return;
+    }
+
     const updatedUser: UserProfile = {
       ...user,
       fullName: fullName.trim(),
@@ -63,30 +71,33 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
     onUpdateProfile(updatedUser);
     setIsEditing(false);
-    setSavedSuccessAlert(true);
-    setTimeout(() => setSavedSuccessAlert(false), 3000);
+    showToast('Profile updated and saved successfully', 'SUCCESS');
   };
 
+  const formattedLastUpdated = user.updatedAt 
+    ? new Date(user.updatedAt).toLocaleString() 
+    : 'Just now';
+
   return (
-    <div>
+    <div style={{ color: '#f8fafc' }}>
       {/* Header Banner */}
-      <div className="page-header" style={{
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0f172a',
         padding: '24px 32px',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        border: '1px solid #1e293b',
         marginBottom: '24px'
       }}>
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <User color="#2563eb" />
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#ffffff' }}>
+            <User color="#3b82f6" size={26} />
             User Account & Operations Identity
           </h1>
-          <p className="page-subtitle">
-            Manage your personal profile, authenticated identity, operations preferences, and local security.
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+            Manage your persistent personal profile, authenticated identity, and operations preferences.
           </p>
         </div>
 
@@ -94,7 +105,19 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           {!isEditing ? (
             <button
               onClick={() => setIsEditing(true)}
-              className="btn btn-primary"
+              style={{
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
             >
               <Edit3 size={16} />
               Edit Profile
@@ -102,7 +125,19 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
           ) : (
             <button
               onClick={() => setIsEditing(false)}
-              className="btn btn-outline"
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid #334155',
+                color: '#cbd5e1',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
             >
               <X size={16} />
               Cancel Edit
@@ -111,8 +146,19 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
           <button
             onClick={onSignOut}
-            className="btn btn-outline"
-            style={{ color: '#b91c1c', borderColor: '#fca5a5' }}
+            style={{
+              backgroundColor: 'transparent',
+              border: '1px solid #7f1d1d',
+              color: '#fca5a5',
+              borderRadius: '8px',
+              padding: '10px 18px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
           >
             <LogOut size={16} />
             Sign Out
@@ -120,26 +166,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
         </div>
       </div>
 
-      {savedSuccessAlert && (
-        <div style={{
-          backgroundColor: '#f0fdf4',
-          border: '1px solid #bbf7d0',
-          borderRadius: '8px',
-          padding: '12px 20px',
-          fontSize: '14px',
-          color: '#15803d',
-          marginBottom: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <CheckCircle2 size={18} />
-          Profile changes updated and saved to Local Demo state.
-        </div>
-      )}
-
       {/* Main Profile Summary Card */}
-      <div className="card" style={{ marginBottom: '28px', padding: '28px' }}>
+      <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '28px', marginBottom: '28px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap' }}>
           
           {/* Avatar Circle */}
@@ -154,7 +182,7 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
             justifyContent: 'center',
             fontSize: '28px',
             fontWeight: 800,
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+            boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
             flexShrink: 0
           }}>
             {user.avatar || 'AS'}
@@ -162,54 +190,57 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
           <div style={{ flex: 1, minWidth: '240px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
                 {user.fullName}
               </h2>
-              <span className="badge badge-verified" style={{ fontSize: '11px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid #15803d' }}>
                 ✓ {user.accountStatus} ACCOUNT
               </span>
             </div>
             
-            <div style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <Mail size={14} color="#64748b" /> {user.email}
+            <div style={{ fontSize: '14px', color: '#94a3b8', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '18px', flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Mail size={14} color="#60a5fa" /> {user.email}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <MapPin size={14} color="#64748b" /> {user.location || 'Coimbatore, Tamil Nadu'}
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={14} color="#60a5fa" /> {user.location || 'Coimbatore, Tamil Nadu'}
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
+                <Clock size={14} color="#64748b" /> Last updated: {formattedLastUpdated}
               </span>
             </div>
           </div>
 
           {/* Profile Completion Bar */}
           <div style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '8px',
+            backgroundColor: '#1e293b',
+            border: '1px solid #334155',
+            borderRadius: '10px',
             padding: '16px 20px',
             minWidth: '220px'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#cbd5e1', marginBottom: '6px' }}>
               <span>Profile Completion</span>
-              <span style={{ color: '#2563eb' }}>{completionPct}%</span>
+              <span style={{ color: '#60a5fa' }}>{completionPct}%</span>
             </div>
             
             <div style={{
               height: '8px',
-              backgroundColor: '#e2e8f0',
+              backgroundColor: '#0f172a',
               borderRadius: '4px',
               overflow: 'hidden'
             }}>
               <div style={{
                 height: '100%',
                 width: `${completionPct}%`,
-                backgroundColor: completionPct === 100 ? '#15803d' : '#2563eb',
+                backgroundColor: completionPct === 100 ? '#22c55e' : '#2563eb',
                 borderRadius: '4px',
                 transition: 'width 0.4s ease'
               }} />
             </div>
 
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-              {completionPct === 100 ? 'All essential identity fields completed' : 'Complete optional fields for optimal matching'}
+            <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+              {completionPct === 100 ? 'All essential identity attributes complete' : 'Fill optional fields for higher matching precision'}
             </div>
           </div>
 
@@ -219,52 +250,52 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
       {/* Main Details Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         
-        {/* Personal & Contact Information */}
-        <div className="card" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={18} color="#2563eb" />
+        {/* Personal Details */}
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={18} color="#3b82f6" />
             Personal & Identity Details
           </h3>
 
           {!isEditing ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Full Name</span>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{user.fullName}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Full Legal Name</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>{user.fullName}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Email Address</span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{user.email}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Email Address</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>{user.email}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Phone Number</span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{user.phone || 'Not provided'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Phone Number</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>{user.phone || 'Not provided'}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '10px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Primary Location</span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{user.location || 'Not provided'}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Primary Location</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>{user.location || 'Not provided'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '4px' }}>
-                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Date of Birth</span>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>{user.dateOfBirth || '14 Jul 2006'}</span>
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Date of Birth</span>
+                <span style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>{user.dateOfBirth || '14 Jul 2006'}</span>
               </div>
             </div>
           ) : (
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                   Full Legal Name
                 </label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={e => setFullName(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#ffffff', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                   Phone Number
                 </label>
                 <input
@@ -272,12 +303,12 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   placeholder="+91 98765 43210"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#ffffff', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                   Primary Location / City
                 </label>
                 <input
@@ -285,12 +316,12 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
                   value={location}
                   onChange={e => setLocation(e.target.value)}
                   placeholder="Coimbatore, Tamil Nadu"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#ffffff', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                   Date of Birth
                 </label>
                 <input
@@ -298,35 +329,21 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
                   value={dateOfBirth}
                   onChange={e => setDateOfBirth(e.target.value)}
                   placeholder="YYYY-MM-DD"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #334155', backgroundColor: '#1e293b', color: '#ffffff', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#475569', marginBottom: '4px' }}>
-                  Avatar Initials (2 letters)
-                </label>
-                <input
-                  type="text"
-                  maxLength={2}
-                  value={avatar}
-                  onChange={e => setAvatar(e.target.value)}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '14px' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
                 <button
                   type="submit"
-                  className="btn btn-accent"
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                 >
                   <Save size={16} /> Save Profile Changes
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="btn btn-outline"
+                  style={{ backgroundColor: 'transparent', color: '#94a3b8', border: '1px solid #334155', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
@@ -339,52 +356,47 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
         {/* Security & Preferences */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Security & Session Card */}
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Lock size={18} color="#2563eb" />
-              Account Security & Local Session
+          {/* Security & Session */}
+          <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Lock size={18} color="#3b82f6" />
+              Account Security & Session State
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f8fafc', padding: '10px 14px', borderRadius: '6px' }}>
-                <span style={{ color: '#64748b' }}>Account ID:</span>
-                <code style={{ fontWeight: 700, color: '#0f172a' }}>{user.id}</code>
+              <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: '10px 14px', borderRadius: '6px' }}>
+                <span style={{ color: '#94a3b8' }}>Account ID:</span>
+                <code style={{ fontWeight: 700, color: '#38bdf8' }}>{user.id}</code>
               </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f8fafc', padding: '10px 14px', borderRadius: '6px' }}>
-                <span style={{ color: '#64748b' }}>Authentication Provider:</span>
-                <span style={{ fontWeight: 700, color: '#2563eb' }}>🔒 {user.authMethod}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#1e293b', padding: '10px 14px', borderRadius: '6px' }}>
+                <span style={{ color: '#94a3b8' }}>Auth Method:</span>
+                <span style={{ fontWeight: 700, color: '#60a5fa' }}>🔒 Provider Managed</span>
               </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: '#f8fafc', padding: '10px 14px', borderRadius: '6px' }}>
-                <span style={{ color: '#64748b' }}>Current Session:</span>
-                <span style={{ fontWeight: 700, color: '#15803d' }}>Active (Persisted Locally)</span>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '16px', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '12px 14px', fontSize: '12px', color: '#1e40af' }}>
-              🔒 <strong>Local Demo Security Note:</strong> Authentication credentials and profile state are managed locally in your browser sandbox without exposing plaintext credentials.
             </div>
           </div>
 
-          {/* Preferences Card */}
-          <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sliders size={18} color="#2563eb" />
-              Agent & Workspace Preferences
+          {/* Preferences */}
+          <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sliders size={18} color="#3b82f6" />
+              Workspace Preferences
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Globe size={16} color="#64748b" />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Preferred Language</span>
+                  <Globe size={16} color="#94a3b8" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>Preferred Language</span>
                 </div>
                 <select
-                  value={language}
-                  onChange={e => setLanguage(e.target.value)}
-                  style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                  value={globalLanguage}
+                  onChange={e => {
+                    const newLang = e.target.value as SupportedLanguage;
+                    setLanguage(newLang);
+                    setGlobalLanguage(newLang);
+                  }}
+                  style={{ backgroundColor: '#1e293b', color: '#ffffff', padding: '6px 12px', borderRadius: '6px', border: '1px solid #334155', fontSize: '13px' }}
                 >
                   <option value="English (US)">English (US)</option>
                   <option value="English (IN)">English (IN)</option>
@@ -395,8 +407,8 @@ export const UserProfilePage: React.FC<UserProfilePageProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Bell size={16} color="#64748b" />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>Agent Execution Notifications</span>
+                  <Bell size={16} color="#94a3b8" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>Execution Notifications</span>
                 </div>
                 <input
                   type="checkbox"

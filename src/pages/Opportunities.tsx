@@ -7,11 +7,14 @@ import {
   Filter, 
   Building2, 
   Calendar,
-  FileCheck
+  FileCheck,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
-import { Opportunity, OpportunityCategory, UserDocument } from '../types';
+import { Opportunity, UserDocument } from '../types';
 import { MOCK_OPPORTUNITIES } from '../data/mockOpportunities';
 import { evaluateEligibility } from '../engine/eligibilityEngine';
+import { useLanguage } from '../context/LanguageContext';
 
 interface OpportunitiesProps {
   documents: UserDocument[];
@@ -22,6 +25,7 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
   documents,
   onCreateDraft
 }) => {
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   const categories: string[] = [
@@ -38,25 +42,45 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
     : MOCK_OPPORTUNITIES.filter(o => o.category === selectedCategory);
 
   return (
-    <div>
-      <div className="page-header" style={{
+    <div style={{ color: '#f8fafc' }}>
+      {/* Header Banner */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0f172a',
         padding: '24px 32px',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        border: '1px solid #1e293b',
         marginBottom: '24px'
       }}>
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Sparkles color="#2563eb" />
-            Opportunity Center
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+            PROTOTYPE DATASET
+          </div>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#ffffff' }}>
+            <Sparkles color="#3b82f6" size={26} />
+            {t.navOpportunities}
           </h1>
-          <p className="page-subtitle">
-            Administrative applications, government schemes, scholarships, and official identity certificates matched against your verified profile.
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+            Prototype opportunities evaluated locally against your verified profile.
           </p>
+        </div>
+
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          backgroundColor: '#1e293b',
+          border: '1px solid #334155',
+          padding: '6px 12px',
+          borderRadius: '20px',
+          fontSize: '12px',
+          color: '#38bdf8',
+          fontWeight: 600
+        }}>
+          <ShieldCheck size={14} />
+          {MOCK_OPPORTUNITIES.length} Prototype Opportunities Available
         </div>
       </div>
 
@@ -66,50 +90,58 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
         alignItems: 'center',
         gap: '8px',
         marginBottom: '20px',
-        borderBottom: '1px solid #e2e8f0',
+        borderBottom: '1px solid #1e293b',
         paddingBottom: '12px',
         flexWrap: 'wrap'
       }}>
-        <Filter size={16} color="#64748b" style={{ marginRight: '4px' }} />
+        <Filter size={16} color="#94a3b8" style={{ marginRight: '4px' }} />
         {categories.map(cat => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`btn btn-sm ${selectedCategory === cat ? 'btn-primary' : 'btn-outline'}`}
-            style={{ borderRadius: '20px' }}
+            style={{
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 14px',
+              border: '1px solid #334155',
+              backgroundColor: selectedCategory === cat ? '#2563eb' : '#1e293b',
+              color: selectedCategory === cat ? '#ffffff' : '#94a3b8',
+              cursor: 'pointer'
+            }}
           >
             {cat}
           </button>
         ))}
       </div>
 
-      {/* UPGRADE #8: Opportunity Engine Summary Stats */}
+      {/* Summary Stats */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '16px',
         marginBottom: '24px'
       }}>
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #2563eb' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Discovered Opportunities</div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{MOCK_OPPORTUNITIES.length} Total</div>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>Schemes, Scholarships & Grants</div>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderLeft: '4px solid #2563eb', borderRadius: '10px', padding: '16px 20px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Prototype Dataset</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', marginTop: '2px' }}>{MOCK_OPPORTUNITIES.length} Total</div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Demo Schemes, Scholarships & Grants</div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #15803d' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Eligible Matches</div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#15803d', marginTop: '2px' }}>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderLeft: '4px solid #15803d', borderRadius: '10px', padding: '16px 20px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Eligible Matches</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#4ade80', marginTop: '2px' }}>
             {MOCK_OPPORTUNITIES.filter(o => evaluateEligibility(o, documents).isEligible).length} Eligible
           </div>
-          <div style={{ fontSize: '12px', color: '#15803d' }}>All prerequisites satisfied</div>
+          <div style={{ fontSize: '12px', color: '#4ade80' }}>All prerequisites satisfied</div>
         </div>
 
-        <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #b91c1c' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Ineligible / Missing Docs</div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#b91c1c', marginTop: '2px' }}>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderLeft: '4px solid #b91c1c', borderRadius: '10px', padding: '16px 20px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Ineligible / Missing Docs</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#fca5a5', marginTop: '2px' }}>
             {MOCK_OPPORTUNITIES.filter(o => !evaluateEligibility(o, documents).isEligible).length} Ineligible
           </div>
-          <div style={{ fontSize: '12px', color: '#64748b' }}>Missing document or criteria</div>
+          <div style={{ fontSize: '12px', color: '#94a3b8' }}>Missing document or criteria</div>
         </div>
       </div>
 
@@ -121,55 +153,66 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
           return (
             <div
               key={opp.id}
-              className="card card-hover"
-              style={{ padding: '24px' }}
+              style={{
+                backgroundColor: '#0f172a',
+                border: '1px solid #1e293b',
+                borderRadius: '12px',
+                padding: '24px'
+              }}
             >
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span className="badge badge-info">{opp.category}</span>
-                    <span style={{ fontSize: '12px', color: '#64748b' }}>• {opp.type}</span>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '2px 8px', borderRadius: '4px' }}>
+                      DEMO OPPORTUNITY
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#94a3b8' }}>{opp.category} • {opp.type}</span>
                   </div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
                     {opp.title}
                   </h2>
-                  <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Building2 size={14} color="#64748b" /> {opp.authority}
+                      <Building2 size={14} color="#94a3b8" /> {opp.authority}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Calendar size={14} color="#64748b" /> Deadline: {opp.deadline}
+                      <Calendar size={14} color="#94a3b8" /> Deadline: {opp.deadline}
                     </span>
+                    {opp.sourceUrl && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#60a5fa' }}>
+                        <ExternalLink size={14} /> Reference Source: {opp.sourceName || 'Official Portal'}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Eligibility Status Badge */}
                 <div>
                   {evalResult.isEligible ? (
-                    <span className="badge badge-verified" style={{ fontSize: '13px', padding: '6px 12px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px', borderRadius: '20px', backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid #15803d', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                       <CheckCircle2 size={16} /> MATCHED ({evalResult.matchedCount}/{evalResult.totalCriteria} Criteria)
                     </span>
                   ) : (
-                    <span className="badge badge-critical" style={{ fontSize: '13px', padding: '6px 12px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 700, padding: '6px 12px', borderRadius: '20px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#fca5a5', border: '1px solid #991b1b', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                       <XCircle size={16} /> NOT ELIGIBLE ({evalResult.matchedCount}/{evalResult.totalCriteria} Criteria)
                     </span>
                   )}
                 </div>
               </div>
 
-              <p style={{ fontSize: '14px', color: '#334155', marginTop: '12px', lineHeight: 1.5 }}>
+              <p style={{ fontSize: '14px', color: '#cbd5e1', marginTop: '12px', lineHeight: 1.5 }}>
                 {opp.description}
               </p>
 
               {/* Criteria Evaluation Breakdown */}
               <div style={{
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '6px',
+                backgroundColor: '#090d16',
+                border: '1px solid #1e293b',
+                borderRadius: '8px',
                 padding: '16px',
                 marginTop: '16px'
               }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', marginBottom: '10px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '10px' }}>
                   Rule Engine Eligibility Evaluation
                 </div>
 
@@ -181,24 +224,24 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e2e8f0',
+                        backgroundColor: '#0f172a',
+                        border: '1px solid #1e293b',
                         padding: '10px 12px',
-                        borderRadius: '4px'
+                        borderRadius: '6px'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {detail.passed ? (
-                          <CheckCircle2 size={16} color="#15803d" />
+                          <CheckCircle2 size={16} color="#4ade80" />
                         ) : (
-                          <XCircle size={16} color="#b91c1c" />
+                          <XCircle size={16} color="#fca5a5" />
                         )}
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff' }}>
                           {detail.criterionLabel}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#64748b' }}>
-                        Actual: <strong>{detail.actualValue}</strong> ({detail.requiredValue})
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        Actual: <strong style={{ color: '#ffffff' }}>{detail.actualValue}</strong> ({detail.requiredValue})
                       </div>
                     </div>
                   ))}
@@ -209,10 +252,23 @@ export const Opportunities: React.FC<OpportunitiesProps> = ({
               <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
                 <button
                   onClick={() => onCreateDraft(opp)}
-                  className="btn btn-primary"
+                  style={{
+                    backgroundColor: '#2563eb',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '10px 18px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                  }}
                 >
                   <FileCheck size={16} />
-                  Create Application Draft
+                  {t.btnCreateDraft}
                   <ArrowRight size={16} />
                 </button>
               </div>

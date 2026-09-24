@@ -94,6 +94,9 @@ export interface Opportunity {
   description: string;
   authority: string;
   criteria: EligibilityCriterion[];
+  sourceUrl?: string;
+  sourceName?: string;
+  lastVerifiedAt?: string;
 }
 
 export interface CriterionEvalResult {
@@ -145,19 +148,29 @@ export interface ApplicationDraft {
 }
 
 export type AuditActionType =
+  | 'GOAL_CREATED'
+  | 'WORKFLOW_PLANNED'
   | 'DOCUMENT_ADDED'
+  | 'DOCUMENT_PROCESSED'
+  | 'VERIFICATION_EXECUTED'
   | 'VERIFICATION_RUN'
+  | 'DISCREPANCY_DETECTED'
   | 'DISCREPANCY_ACKNOWLEDGED'
+  | 'ELIGIBILITY_EVALUATED'
   | 'APPLICATION_DRAFTED'
+  | 'APPLICATION_DRAFT_PREPARED'
   | 'FIELD_APPROVED'
   | 'FIELD_REJECTED'
   | 'FIELD_APPROVAL_REVOKED'
   | 'DECLARATION_AUTHORIZED'
+  | 'HUMAN_DECLARATION_CONFIRMED'
   | 'APPLICATION_SUBMITTED'
+  | 'APPLICATION_MOCK_SUBMITTED'
   | 'DEMO_RESET';
 
 export interface AuditEvent {
   id: string;
+  userId?: string;
   action: AuditActionType;
   actionLabel: string;
   applicationTitle?: string;

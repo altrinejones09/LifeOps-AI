@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   History, 
   ShieldCheck, 
-  Lock, 
   CheckCircle2, 
   FileText, 
   AlertTriangle, 
@@ -12,7 +11,8 @@ import {
   Filter,
   Search,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Key
 } from 'lucide-react';
 import { AuditEvent } from '../types';
 import { verifyAuditChain } from '../utils/audit';
@@ -43,7 +43,7 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
       if (idx === auditLogs.length - 1) {
         return {
           ...log,
-          details: log.details + ' [UNAUTHORIZED LOCAL TAMPERING DETECTED]'
+          details: log.details + ' [UNAUTHORIZED SHA-256 PAYLOAD TAMPERING DETECTED]'
         };
       }
       return log;
@@ -55,12 +55,12 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
 
   const getActionIcon = (action: string) => {
     switch (action) {
-      case 'DOCUMENT_ADDED': return <UploadCloud size={16} color="#2563eb" />;
-      case 'VERIFICATION_RUN': return <ShieldCheck size={16} color="#15803d" />;
-      case 'DISCREPANCY_ACKNOWLEDGED': return <AlertTriangle size={16} color="#b45309" />;
-      case 'APPLICATION_SUBMITTED': return <Send size={16} color="#15803d" />;
-      case 'DEMO_RESET': return <RefreshCw size={16} color="#4338ca" />;
-      default: return <FileText size={16} color="#64748b" />;
+      case 'DOCUMENT_ADDED': return <UploadCloud size={16} color="#3b82f6" />;
+      case 'VERIFICATION_RUN': return <ShieldCheck size={16} color="#22c55e" />;
+      case 'DISCREPANCY_ACKNOWLEDGED': return <AlertTriangle size={16} color="#f59e0b" />;
+      case 'APPLICATION_SUBMITTED': return <Send size={16} color="#22c55e" />;
+      case 'DEMO_RESET': return <RefreshCw size={16} color="#a855f7" />;
+      default: return <FileText size={16} color="#94a3b8" />;
     }
   };
 
@@ -76,75 +76,100 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
   });
 
   return (
-    <div>
-      <div className="page-header" style={{
+    <div style={{ color: '#f8fafc' }}>
+      {/* Header Banner */}
+      <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#0f172a',
         padding: '24px 32px',
-        borderRadius: '8px',
-        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        border: '1px solid #1e293b',
         marginBottom: '24px'
       }}>
         <div>
-          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <History color="#2563eb" />
-            Cryptographic SHA-256 Audit Ledger
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: '#ffffff' }}>
+            <History color="#3b82f6" size={26} />
+            Cryptographic SHA-256 Audit Trail
           </h1>
-          <p className="page-subtitle">
-            Tamper-evident administrative ledger. Every event is cryptographically linked with SHA-256 payload hashing.
+          <p style={{ fontSize: '14px', color: '#94a3b8', marginTop: '4px' }}>
+            Tamper-evident operations ledger. Every administrative action is linked via SHA-256 hash chains.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             onClick={handleRunIntegrityCheck}
-            className="btn btn-primary btn-sm"
+            style={{
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            <ShieldCheck size={14} />
-            Verify Chain Integrity
+            <ShieldCheck size={16} />
+            Verify Audit Integrity
           </button>
           <button
             onClick={handleSimulateTamperTest}
-            className="btn btn-outline btn-sm"
-            style={{ color: '#b45309', borderColor: '#fde047' }}
+            style={{
+              backgroundColor: 'transparent',
+              border: '1px solid #b45309',
+              color: '#fde047',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
           >
-            <AlertTriangle size={14} />
+            <AlertTriangle size={16} />
             Simulate Tamper Test
           </button>
         </div>
       </div>
 
-      {/* Audit Chain Integrity Status Banner */}
-      <div className="card" style={{
-        backgroundColor: currentIntegrity.valid ? '#f0fdf4' : '#fef2f2',
-        borderColor: currentIntegrity.valid ? '#bbf7d0' : '#fecaca',
+      {/* Audit Chain Status Banner */}
+      <div style={{
+        backgroundColor: currentIntegrity.valid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+        border: `1px solid ${currentIntegrity.valid ? '#15803d' : '#991b1b'}`,
+        borderRadius: '10px',
         marginBottom: '24px',
         padding: '16px 20px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
-              width: '32px',
-              height: '32px',
+              width: '36px',
+              height: '36px',
               borderRadius: '50%',
-              backgroundColor: currentIntegrity.valid ? '#dcfce7' : '#fee2e2',
-              color: currentIntegrity.valid ? '#15803d' : '#b91c1c',
+              backgroundColor: currentIntegrity.valid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+              color: currentIntegrity.valid ? '#4ade80' : '#fca5a5',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              {currentIntegrity.valid ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+              {currentIntegrity.valid ? <CheckCircle2 size={20} /> : <AlertTriangle size={20} />}
             </div>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: currentIntegrity.valid ? '#166534' : '#991b1b' }}>
-                {currentIntegrity.valid ? '✓ SHA-256 AUDIT CHAIN VERIFIED (0 Tampering Detected)' : '⚠ AUDIT INTEGRITY ERROR: Tampering Detected'}
+              <div style={{ fontSize: '14px', fontWeight: 700, color: currentIntegrity.valid ? '#4ade80' : '#fca5a5' }}>
+                {currentIntegrity.valid ? '✓ SHA-256 AUDIT CHAIN VERIFIED (0 Tampering Detected)' : '⚠ CRYPTOGRAPHIC TAMPERING DETECTED'}
               </div>
-              <div style={{ fontSize: '12px', color: currentIntegrity.valid ? '#15803d' : '#b91c1c', marginTop: '2px' }}>
+              <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '2px' }}>
                 {currentIntegrity.valid
-                  ? `All ${activeLogs.length} events are cryptographically linked using SHA-256 hash chaining.`
+                  ? `All ${activeLogs.length} events are verified using Web Crypto SHA-256 hash linkage.`
                   : currentIntegrity.reason}
               </div>
             </div>
@@ -153,8 +178,16 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
           {tamperedTestLogs && (
             <button
               onClick={handleRunIntegrityCheck}
-              className="btn btn-sm btn-outline"
-              style={{ fontSize: '12px', color: '#15803d', borderColor: '#86efac' }}
+              style={{
+                backgroundColor: '#15803d',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
             >
               Restore Valid Chain
             </button>
@@ -162,39 +195,47 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
         </div>
       </div>
 
-      {/* UPGRADE #14: Filter & Search Bar */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '24px' }}>
+      {/* Filter & Search */}
+      <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px 20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <Filter size={16} color="#64748b" />
+            <Filter size={16} color="#94a3b8" />
             {actionTypes.map(act => (
               <button
                 key={act}
                 onClick={() => setSelectedActionFilter(act)}
-                className={`btn btn-sm ${selectedActionFilter === act ? 'btn-primary' : 'btn-outline'}`}
-                style={{ borderRadius: '16px', fontSize: '12px' }}
+                style={{
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  padding: '4px 12px',
+                  border: '1px solid #334155',
+                  backgroundColor: selectedActionFilter === act ? '#2563eb' : '#1e293b',
+                  color: selectedActionFilter === act ? '#ffffff' : '#94a3b8',
+                  cursor: 'pointer'
+                }}
               >
-                {act === 'ALL' ? 'All Events' : act.replace('_', ' ')}
+                {act === 'ALL' ? 'All Events' : act.replace(/_/g, ' ')}
               </button>
             ))}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '6px 12px' }}>
-            <Search size={14} color="#64748b" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px 12px' }}>
+            <Search size={14} color="#94a3b8" />
             <input
               type="text"
-              placeholder="Search audit records..."
+              placeholder="Search SHA-256 records..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: '#0f172a', width: '180px' }}
+              style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '13px', color: '#ffffff', width: '180px' }}
             />
           </div>
         </div>
       </div>
 
-      {/* Ledger Timeline List */}
-      <div className="card" style={{ padding: '24px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', marginBottom: '20px' }}>
+      {/* Ledger Timeline */}
+      <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px' }}>
+        <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '20px' }}>
           Chronological Event Ledger ({filteredLogs.length} Events)
         </h2>
 
@@ -207,23 +248,18 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  backgroundColor: idx === 0 ? '#eff6ff' : '#ffffff',
-                  borderLeft: `4px solid ${idx === 0 ? '#2563eb' : '#cbd5e1'}`
+                  borderRadius: '8px',
+                  border: '1px solid #1e293b',
+                  backgroundColor: idx === 0 ? '#1e293b' : '#0f172a',
+                  borderLeft: `4px solid ${idx === 0 ? '#2563eb' : '#334155'}`
                 }}
               >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '16px',
-                  padding: '16px'
-                }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px' }}>
                   <div style={{
                     width: '36px',
                     height: '36px',
                     borderRadius: '50%',
-                    backgroundColor: '#f1f5f9',
+                    backgroundColor: '#1e293b',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -235,69 +271,62 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>
                           {log.actionLabel}
                         </span>
-                        <span className="provenance-tag" style={{ fontSize: '10px' }}>
+                        <code style={{ fontSize: '11px', color: '#38bdf8', backgroundColor: '#1e293b', padding: '2px 6px', borderRadius: '4px' }}>
                           {log.id}
-                        </span>
+                        </code>
                       </div>
 
-                      <span style={{ fontSize: '12px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
-                        {log.timestamp}
+                      <span style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                        {new Date(log.timestamp).toLocaleString()}
                       </span>
                     </div>
 
-                    <p style={{ fontSize: '13px', color: '#334155', marginTop: '6px', lineHeight: 1.5 }}>
+                    <p style={{ fontSize: '13px', color: '#cbd5e1', marginTop: '6px', lineHeight: 1.5 }}>
                       {log.details}
                     </p>
 
-                    {/* Additional Event Metadata */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginTop: '10px',
-                      fontSize: '12px',
-                      color: '#64748b'
-                    }}>
+                    {log.hash && (
+                      <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8', fontFamily: 'monospace' }}>
+                        <Key size={12} color="#60a5fa" />
+                        <span>SHA-256 Hash: <code style={{ color: '#60a5fa' }}>{log.hash}</code></span>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px', fontSize: '12px', color: '#94a3b8' }}>
                       <div style={{ display: 'flex', gap: '16px' }}>
                         {log.sourceDocument && (
                           <div>
-                            Source Document: <strong style={{ color: '#0f172a' }}>{log.sourceDocument}</strong>
-                          </div>
-                        )}
-                        {log.field && (
-                          <div>
-                            Target Field: <strong style={{ color: '#0f172a' }}>{log.field}</strong>
+                            Source Document: <strong style={{ color: '#ffffff' }}>{log.sourceDocument}</strong>
                           </div>
                         )}
                         <div>
-                          Authorized By: <strong style={{ color: '#2563eb' }}>{log.approvedBy}</strong>
+                          Authorized By: <strong style={{ color: '#60a5fa' }}>{log.approvedBy}</strong>
                         </div>
                       </div>
 
                       <button
                         onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-                        style={{ border: 'none', background: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
+                        style={{ border: 'none', background: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        {isExpanded ? 'Hide Raw Metadata' : 'View Raw Metadata'}
+                        {isExpanded ? 'Hide Raw Metadata' : 'View Payload Details'}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* UPGRADE #14: JSON Raw Event Payload Viewer */}
                 {isExpanded && (
                   <div style={{
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#090d16',
                     color: '#38bdf8',
                     padding: '12px 16px',
                     borderTop: '1px solid #1e293b',
-                    borderBottomLeftRadius: '6px',
-                    borderBottomRightRadius: '6px',
-                    fontFamily: 'var(--font-mono)',
+                    borderBottomLeftRadius: '8px',
+                    borderBottomRightRadius: '8px',
+                    fontFamily: 'monospace',
                     fontSize: '11px',
                     overflowX: 'auto'
                   }}>
@@ -312,4 +341,3 @@ export const AuditTrail: React.FC<AuditTrailProps> = ({ auditLogs }) => {
     </div>
   );
 };
-

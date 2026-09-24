@@ -48,7 +48,7 @@ interface AgentWorkspaceProps {
   demoMode: DemoMode;
   user?: UserProfile | null;
   onNavigate: (tab: NavTab) => void;
-  onCreateDraft: (opportunity: Opportunity, navigateToApps?: boolean) => void;
+  onCreateDraft: (opportunity: Opportunity, navigateToApps?: boolean) => ApplicationDraft | void;
   onSaveAgentRun: (run: AgentRun | null) => void;
 }
 
@@ -508,7 +508,8 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
       } else if (step === 6) {
         // Step 06 Complete -> Step 07 Active (Prepare application draft WITHOUT automatically navigating away)
         const eligibleOpp = MOCK_OPPORTUNITIES[0]; // State Student Support Scheme
-        onCreateDraft(eligibleOpp, false); // DO NOT NAVIGATE AWAY
+        const createdDraft = onCreateDraft(eligibleOpp, false);
+        const actualAppId = createdDraft?.id || 'app-draft-01';
 
         const log1: AgentActivityLogItem = {
           id: `log-${Date.now()}-s11`,
@@ -547,10 +548,15 @@ export const AgentWorkspace: React.FC<AgentWorkspaceProps> = ({
         setIsRunning(false);
         setRunCompleted(true);
 
-        // Save complete persisted run state to localStorage!
-        saveRunState('WAITING_APPROVAL', finalSteps, finalLogs, 'app-draft-01');
+        // Save complete persisted run state using ACTUAL generated application ID!
+        saveRunState('WAITING_APPROVAL', finalSteps, finalLogs, actualAppId);
 
         clearInterval(interval);
+
+        // Automatic seamless transition to Approval Center
+        setTimeout(() => {
+          onNavigate('approval');
+        }, 1200);
       }
     }, 850);
   };

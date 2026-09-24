@@ -43,6 +43,8 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
 
   // Common UI State
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState<boolean>(false);
+  const [showSignUpConfirmPassword, setShowSignUpConfirmPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -536,43 +538,79 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                     Password
                   </label>
-                  <input
-                    type="password"
-                    value={signUpPassword}
-                    onChange={e => setSignUpPassword(e.target.value)}
-                    placeholder="8+ chars"
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#090d16',
-                      border: '1px solid #334155',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      color: '#ffffff',
-                      fontSize: '13px',
-                      outline: 'none'
-                    }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showSignUpPassword ? 'text' : 'password'}
+                      value={signUpPassword}
+                      onChange={e => setSignUpPassword(e.target.value)}
+                      placeholder="8+ chars"
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#090d16',
+                        border: '1px solid #334155',
+                        borderRadius: '8px',
+                        padding: '8px 34px 8px 12px',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '8px',
+                        border: 'none',
+                        background: 'none',
+                        color: '#64748b',
+                        cursor: 'pointer'
+                      }}
+                      aria-label={showSignUpPassword ? 'Hide sign up password' : 'Show sign up password'}
+                    >
+                      {showSignUpPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: '#94a3b8', marginBottom: '4px' }}>
                     Confirm Password
                   </label>
-                  <input
-                    type="password"
-                    value={signUpConfirmPassword}
-                    onChange={e => setSignUpConfirmPassword(e.target.value)}
-                    placeholder="Re-enter password"
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#090d16',
-                      border: '1px solid #334155',
-                      borderRadius: '8px',
-                      padding: '8px 12px',
-                      color: '#ffffff',
-                      fontSize: '13px',
-                      outline: 'none'
-                    }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showSignUpConfirmPassword ? 'text' : 'password'}
+                      value={signUpConfirmPassword}
+                      onChange={e => setSignUpConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      style={{
+                        width: '100%',
+                        backgroundColor: '#090d16',
+                        border: '1px solid #334155',
+                        borderRadius: '8px',
+                        padding: '8px 34px 8px 12px',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        outline: 'none'
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignUpConfirmPassword(!showSignUpConfirmPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '8px',
+                        border: 'none',
+                        background: 'none',
+                        color: '#64748b',
+                        cursor: 'pointer'
+                      }}
+                      aria-label={showSignUpConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showSignUpConfirmPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2, User, ChevronDown, LogOut, Shield, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, RefreshCw, AlertTriangle, CheckCircle2, User, ChevronDown, LogOut, Shield, Settings, Code, Globe } from 'lucide-react';
 import { DemoMode, UserProfile } from '../../types';
 import { NavTab } from './Sidebar';
+import { useLanguage, SupportedLanguage } from '../../context/LanguageContext';
 
 interface HeaderProps {
   user: UserProfile | null;
   demoMode: DemoMode;
   onSelectDemoMode: (mode: DemoMode) => void;
   onResetDemo: () => void;
-  onNavigateToTab: (tab: NavTab) => void;
+  onNavigateToTab?: (tab: NavTab) => void;
   onSignOut: () => void;
 }
 
@@ -20,10 +22,12 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateToTab,
   onSignOut
 }) => {
+  const navigate = useNavigate();
+  const { language, setLanguage } = useLanguage();
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const [testModeOpen, setTestModeOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -34,11 +38,17 @@ export const Header: React.FC<HeaderProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleNav = (route: string, tab?: NavTab) => {
+    if (tab && onNavigateToTab) onNavigateToTab(tab);
+    navigate(route);
+    setDropdownOpen(false);
+  };
+
   return (
-    <header className="header-bar" style={{
-      backgroundColor: '#ffffff',
-      borderBottom: '1px solid #e2e8f0',
-      padding: '12px 32px',
+    <header style={{
+      backgroundColor: '#0f172a',
+      borderBottom: '1px solid #1e293b',
+      padding: '12px 28px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -47,98 +57,168 @@ export const Header: React.FC<HeaderProps> = ({
       zIndex: 20
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h1 style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-              LifeOps AI
-            </h1>
-            <span style={{ color: '#94a3b8' }}>|</span>
-            <span style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
-              Secure Application Workspace
-            </span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h1 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+            LifeOps AI
+          </h1>
+          <span style={{ color: '#334155' }}>|</span>
+          <span style={{ fontSize: '13px', fontWeight: 500, color: '#94a3b8' }}>
+            Prototype Operations Workspace
+          </span>
         </div>
 
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          backgroundColor: '#f1f5f9',
+          backgroundColor: 'rgba(30, 41, 59, 0.8)',
           padding: '4px 10px',
           borderRadius: '20px',
-          fontSize: '12px',
-          color: '#334155',
-          border: '1px solid #cbd5e1'
+          fontSize: '11px',
+          color: '#38bdf8',
+          border: '1px solid #1e293b'
         }}>
-          <ShieldCheck size={14} color="#2563eb" />
-          <span style={{ fontWeight: 600 }}>🔒 Local Demo Mode</span>
+          <ShieldCheck size={14} color="#38bdf8" />
+          <span style={{ fontWeight: 600 }}>Security Hardened Architecture</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        {/* Quick Demo Dataset Selector for Judges */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          backgroundColor: '#f8fafc',
-          padding: '3px',
-          borderRadius: '6px',
-          border: '1px solid #e2e8f0'
-        }}>
-          <button
-            onClick={() => onSelectDemoMode('mismatch')}
-            className={`btn btn-sm ${demoMode === 'mismatch' ? 'btn-primary' : 'btn-outline'}`}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Language Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '4px 8px' }}>
+          <Globe size={14} color="#38bdf8" />
+          <select
+            aria-label="Select Application Language"
+            value={language}
+            onChange={e => setLanguage(e.target.value as SupportedLanguage)}
             style={{
-              padding: '4px 10px',
-              fontSize: '12px',
-              borderRadius: '4px',
-              backgroundColor: demoMode === 'mismatch' ? '#b45309' : 'transparent',
-              color: demoMode === 'mismatch' ? '#ffffff' : '#64748b',
+              backgroundColor: 'transparent',
+              color: '#f8fafc',
               border: 'none',
-              fontWeight: 600
-            }}
-            title="Load dataset containing name mismatch between Aadhaar and Income Certificate"
-          >
-            <AlertTriangle size={13} />
-            Demo A — Mismatch Case
-          </button>
-          
-          <button
-            onClick={() => onSelectDemoMode('clean')}
-            className={`btn btn-sm ${demoMode === 'clean' ? 'btn-primary' : 'btn-outline'}`}
-            style={{
-              padding: '4px 10px',
               fontSize: '12px',
-              borderRadius: '4px',
-              backgroundColor: demoMode === 'clean' ? '#15803d' : 'transparent',
-              color: demoMode === 'clean' ? '#ffffff' : '#64748b',
-              border: 'none',
-              fontWeight: 600
+              fontWeight: 600,
+              outline: 'none',
+              cursor: 'pointer'
             }}
-            title="Load clean verified dataset where all documents match perfectly"
           >
-            <CheckCircle2 size={13} />
-            Demo B — Clean Case
-          </button>
+            <option value="English (US)" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>English (US)</option>
+            <option value="English (IN)" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>English (IN)</option>
+            <option value="Tamil" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>Tamil (தமிழ்)</option>
+            <option value="Hindi" style={{ backgroundColor: '#0f172a', color: '#ffffff' }}>Hindi (हिंदी)</option>
+          </select>
         </div>
 
-        <button
-          onClick={onResetDemo}
-          className="btn btn-outline btn-sm"
-          style={{ fontSize: '12px', color: '#64748b' }}
-          title="Reset local state to fresh defaults"
-        >
-          <RefreshCw size={13} />
-          Reset State
-        </button>
+        {/* Test Mode Switcher dropdown for developers */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            onClick={() => setTestModeOpen(!testModeOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#1e293b',
+              border: '1px solid #334155',
+              borderRadius: '6px',
+              padding: '6px 10px',
+              color: '#94a3b8',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            <Code size={14} color="#60a5fa" />
+            <span>Dev / Test Mode</span>
+          </button>
 
-        <div style={{
-          height: '24px',
-          width: '1px',
-          backgroundColor: '#e2e8f0'
-        }} />
+          {testModeOpen && (
+            <div style={{
+              position: 'absolute',
+              right: 0,
+              top: '40px',
+              width: '260px',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '10px',
+              padding: '12px',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
+              zIndex: 100
+            }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', marginBottom: '8px' }}>
+                Test Fixtures Environment
+              </div>
 
-        {/* Authenticated User Menu Dropdown */}
+              <button
+                onClick={() => { onSelectDemoMode('mismatch'); setTestModeOpen(false); }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: demoMode === 'mismatch' ? '#78350f' : 'transparent',
+                  color: '#fde68a',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginBottom: '4px'
+                }}
+              >
+                <AlertTriangle size={14} color="#f59e0b" />
+                Fixture A: Name Mismatch Case
+              </button>
+
+              <button
+                onClick={() => { onSelectDemoMode('clean'); setTestModeOpen(false); }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  backgroundColor: demoMode === 'clean' ? '#14532d' : 'transparent',
+                  color: '#86efac',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  marginBottom: '8px'
+                }}
+              >
+                <CheckCircle2 size={14} color="#22c55e" />
+                Fixture B: Clean Verified Case
+              </button>
+
+              <button
+                onClick={() => { onResetDemo(); setTestModeOpen(false); }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid #334155',
+                  backgroundColor: 'transparent',
+                  color: '#94a3b8',
+                  fontSize: '11px',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={12} /> Reset Fixture Sandbox
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div style={{ height: '20px', width: '1px', backgroundColor: '#334155' }} />
+
+        {/* Authenticated User Dropdown */}
         <div style={{ position: 'relative' }} ref={dropdownRef}>
           <button
             type="button"
@@ -146,9 +226,9 @@ export const Header: React.FC<HeaderProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#f8fafc',
+              gap: '10px',
+              border: '1px solid #334155',
+              backgroundColor: '#1e293b',
               padding: '4px 10px 4px 6px',
               borderRadius: '24px',
               cursor: 'pointer'
@@ -170,15 +250,15 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-                {user?.fullName || 'Aarav Sharma'}
+              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                {user?.fullName || 'Account Owner'}
               </div>
-              <div style={{ fontSize: '10px', color: '#64748b' }}>
+              <div style={{ fontSize: '10px', color: '#94a3b8' }}>
                 Personal Operations
               </div>
             </div>
 
-            <ChevronDown size={14} color="#64748b" />
+            <ChevronDown size={14} color="#94a3b8" />
           </button>
 
           {/* Dropdown Menu */}
@@ -188,21 +268,21 @@ export const Header: React.FC<HeaderProps> = ({
               right: 0,
               top: '44px',
               width: '220px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15)',
+              backgroundColor: '#0f172a',
+              border: '1px solid #334155',
+              borderRadius: '10px',
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
               padding: '6px',
               zIndex: 100
             }}>
-              <div style={{ padding: '8px 12px', borderBottom: '1px solid #f1f5f9', marginBottom: '4px' }}>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>{user?.fullName}</div>
-                <div style={{ fontSize: '11px', color: '#64748b', wordBreak: 'break-all' }}>{user?.email}</div>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid #1e293b', marginBottom: '4px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>{user?.fullName}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', wordBreak: 'break-all' }}>{user?.email}</div>
               </div>
 
               <button
                 type="button"
-                onClick={() => { onNavigateToTab('profile'); setDropdownOpen(false); }}
+                onClick={() => handleNav('/profile', 'profile')}
                 style={{
                   width: '100%',
                   display: 'flex',
@@ -212,20 +292,19 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#334155',
+                  color: '#cbd5e1',
                   fontSize: '13px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
-                className="card-hover"
               >
-                <User size={15} color="#2563eb" /> View Profile
+                <User size={15} color="#3b82f6" /> View Profile
               </button>
 
               <button
                 type="button"
-                onClick={() => { onNavigateToTab('profile'); setDropdownOpen(false); }}
+                onClick={() => handleNav('/privacy', 'privacy')}
                 style={{
                   width: '100%',
                   display: 'flex',
@@ -235,41 +314,17 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#334155',
+                  color: '#cbd5e1',
                   fontSize: '13px',
                   fontWeight: 500,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
-                className="card-hover"
               >
-                <Settings size={15} color="#475569" /> Edit Profile
+                <Shield size={15} color="#22c55e" /> Privacy & Security
               </button>
 
-              <button
-                type="button"
-                onClick={() => { onNavigateToTab('privacy'); setDropdownOpen(false); }}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  color: '#334155',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  textAlign: 'left'
-                }}
-                className="card-hover"
-              >
-                <Shield size={15} color="#15803d" /> Privacy & Security
-              </button>
-
-              <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '4px 0' }} />
+              <div style={{ height: '1px', backgroundColor: '#1e293b', margin: '4px 0' }} />
 
               <button
                 type="button"
@@ -283,15 +338,14 @@ export const Header: React.FC<HeaderProps> = ({
                   borderRadius: '6px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#b91c1c',
+                  color: '#fca5a5',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   textAlign: 'left'
                 }}
-                className="card-hover"
               >
-                <LogOut size={15} color="#b91c1c" /> Sign Out
+                <LogOut size={15} color="#ef4444" /> Sign Out
               </button>
             </div>
           )}
@@ -300,4 +354,3 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
-

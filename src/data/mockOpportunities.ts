@@ -9,6 +9,9 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     deadline: '28 Sep 2026',
     authority: 'Department of Higher Education, Govt. of Tamil Nadu',
     description: 'Financial support grant for eligible resident students pursuing higher education in recognized state institutions.',
+    sourceUrl: 'https://tndhe.gov.in/schemes/higher-education-grant-2026',
+    sourceName: 'Tamil Nadu Higher Education Portal (Official)',
+    lastVerifiedAt: '2026-09-20T12:00:00.000Z',
     criteria: [
       {
         key: 'age',
@@ -48,6 +51,9 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     deadline: '15 Oct 2026',
     authority: 'National Merit Trust',
     description: 'Merit-cum-means scholarship program for high-performing secondary education graduates.',
+    sourceUrl: 'https://scholarships.gov.in/national-merit-trust-2026',
+    sourceName: 'National Scholarship Portal (NSP Official)',
+    lastVerifiedAt: '2026-09-21T09:30:00.000Z',
     criteria: [
       {
         key: 'academicScore',
@@ -73,6 +79,9 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
     deadline: 'Rolling / No Expiry',
     authority: 'District Revenue & Citizen Services Administration',
     description: 'Official digital identity verification certificate required for state portal applications.',
+    sourceUrl: 'https://tnedistrict.tn.gov.in/citizen/services',
+    sourceName: 'e-Sevai Portal Govt of Tamil Nadu',
+    lastVerifiedAt: '2026-09-18T16:45:00.000Z',
     criteria: [
       {
         key: 'residency',

@@ -11,15 +11,15 @@ import {
 } from '../utils/comparison';
 
 /**
- * DETERMINISTIC ELIGIBILITY ENGINE
+ * REUSABLE EXPLAINABLE ELIGIBILITY ENGINE
  * 
  * Evaluates verified document vault attributes against administrative opportunity rules.
+ * Never claims eligibility if required attributes are missing.
  */
 export function evaluateEligibility(
   opportunity: Opportunity,
   documents: UserDocument[]
 ): EligibilityResult {
-  // Extract profile attributes from document vault
   let dobStr = '';
   let incomeStr = '';
   let addressStr = '';
@@ -34,8 +34,8 @@ export function evaluateEligibility(
     });
   });
 
-  // Calculate numeric profile metrics with exact birth month/day age precision
-  let calculatedAge = 20; // Default fallback for 2006 DOB
+  // Calculate numeric profile metrics with exact birth month/day precision
+  let calculatedAge: number | null = null;
   const normDate = normalizeDate(dobStr);
   if (normDate) {
     const parts = normDate.split('-');
@@ -44,49 +44,67 @@ export function evaluateEligibility(
       const birthMonth = parseInt(parts[1], 10) - 1;
       const birthDay = parseInt(parts[2], 10);
       const today = new Date();
-      calculatedAge = today.getFullYear() - birthYear;
+      let age = today.getFullYear() - birthYear;
       const monthDiff = today.getMonth() - birthMonth;
       if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
-        calculatedAge--;
+        age--;
       }
+      calculatedAge = age;
     }
   }
 
-  const numericIncome = parseIncomeNumber(incomeStr);
-  const numericAcademic = parsePercentage(academicStr);
+  const numericIncome = incomeStr ? parseIncomeNumber(incomeStr) : null;
+  const numericAcademic = academicStr ? parsePercentage(academicStr) : null;
 
   const details: CriterionEvalResult[] = [];
   let matchedCount = 0;
+  let missingCount = 0;
 
   opportunity.criteria.forEach(criterion => {
     let passed = false;
-    let actualValue = 'N/A';
+    let actualValue = 'Missing Document / Value';
     let requiredValue = 'N/A';
 
     switch (criterion.type) {
       case 'age_range': {
         const { min, max } = criterion.targetValue;
-        actualValue = `${calculatedAge} years`;
         requiredValue = `${min}–${max} years`;
-        passed = calculatedAge >= min && calculatedAge <= max;
+        if (calculatedAge !== null) {
+          actualValue = `${calculatedAge} years`;
+          passed = calculatedAge >= min && calculatedAge <= max;
+        } else {
+          missingCount++;
+        }
         break;
       }
       case 'max_number': {
-        actualValue = `₹${numericIncome.toLocaleString('en-IN')}`;
         requiredValue = `<= ₹${criterion.targetValue.toLocaleString('en-IN')}`;
-        passed = numericIncome <= criterion.targetValue;
+        if (numericIncome !== null) {
+          actualValue = `₹${numericIncome.toLocaleString('en-IN')}`;
+          passed = numericIncome <= criterion.targetValue;
+        } else {
+          missingCount++;
+        }
         break;
       }
       case 'min_number': {
-        actualValue = `${numericAcademic}%`;
         requiredValue = `>= ${criterion.targetValue}%`;
-        passed = numericAcademic >= criterion.targetValue;
+        if (numericAcademic !== null) {
+          actualValue = `${numericAcademic}%`;
+          passed = numericAcademic >= criterion.targetValue;
+        } else {
+          missingCount++;
+        }
         break;
       }
       case 'exact_match': {
-        actualValue = addressStr || 'Unknown';
         requiredValue = criterion.targetValue;
-        passed = addressStr.toLowerCase().includes(criterion.targetValue.toLowerCase());
+        if (addressStr) {
+          actualValue = addressStr;
+          passed = addressStr.toLowerCase().includes(criterion.targetValue.toLowerCase());
+        } else {
+          missingCount++;
+        }
         break;
       }
       default:
@@ -104,7 +122,8 @@ export function evaluateEligibility(
   });
 
   const totalCriteria = opportunity.criteria.length;
-  const isEligible = matchedCount === totalCriteria;
+  // If missing documents exist, cannot claim fully eligible
+  const isEligible = matchedCount === totalCriteria && missingCount === 0;
 
   return {
     opportunityId: opportunity.id,

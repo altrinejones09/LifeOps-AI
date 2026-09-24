@@ -24,7 +24,44 @@ export const DEFAULT_DEMO_USER: UserProfile = {
 
 interface StoredUserAccount {
   profile: UserProfile;
-  passwordHash: string; // Demo-safe mock hash
+  passwordHash: string;
+}
+
+const inMemoryAuthStore = new Map<string, string>();
+
+function getItem(key: string): string | null {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+  } catch {
+    // Fallthrough to in-memory map
+  }
+  return inMemoryAuthStore.get(key) || null;
+}
+
+function setItem(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+      return;
+    }
+  } catch {
+    // Fallthrough to in-memory map
+  }
+  inMemoryAuthStore.set(key, value);
+}
+
+function removeItem(key: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+      return;
+    }
+  } catch {
+    // Fallthrough to in-memory map
+  }
+  inMemoryAuthStore.delete(key);
 }
 
 /**
@@ -32,7 +69,7 @@ interface StoredUserAccount {
  */
 export function loadStoredAuthState(): AuthState {
   try {
-    const rawSession = localStorage.getItem(STORAGE_KEY_AUTH_SESSION);
+    const rawSession = getItem(STORAGE_KEY_AUTH_SESSION);
     if (rawSession) {
       const parsedUser: UserProfile = JSON.parse(rawSession);
       return {
@@ -57,9 +94,9 @@ export function loadStoredAuthState(): AuthState {
 export function saveAuthSession(user: UserProfile | null): void {
   try {
     if (user) {
-      localStorage.setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(user));
+      setItem(STORAGE_KEY_AUTH_SESSION, JSON.stringify(user));
     } else {
-      localStorage.removeItem(STORAGE_KEY_AUTH_SESSION);
+      removeItem(STORAGE_KEY_AUTH_SESSION);
     }
   } catch (err) {
     console.warn('Failed to save auth session:', err);
@@ -67,11 +104,11 @@ export function saveAuthSession(user: UserProfile | null): void {
 }
 
 /**
- * Load registered demo accounts list from localStorage
+ * Load registered accounts list from localStorage
  */
 function loadRegisteredUsers(): StoredUserAccount[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_USER_USERS);
+    const raw = getItem(STORAGE_KEY_USER_USERS);
     if (raw) {
       return JSON.parse(raw);
     }
@@ -79,53 +116,54 @@ function loadRegisteredUsers(): StoredUserAccount[] {
     console.warn('Failed to load registered users:', e);
   }
   
-  // Seed with default demo user
+  // Seed with default user account
   const defaultAccount: StoredUserAccount = {
     profile: DEFAULT_DEMO_USER,
-    passwordHash: 'demo_password_123'
+    passwordHash: 'demo1234'
   };
   return [defaultAccount];
 }
 
 /**
- * Save registered demo accounts list to localStorage
+ * Save registered accounts list to localStorage
  */
 function saveRegisteredUsers(users: StoredUserAccount[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY_USER_USERS, JSON.stringify(users));
+    setItem(STORAGE_KEY_USER_USERS, JSON.stringify(users));
   } catch (e) {
     console.warn('Failed to save registered users:', e);
   }
 }
 
 /**
- * Authenticate with Email & Password (Local Demo Auth Provider)
+ * Authenticate with Email & Password
  */
 export function authenticateUser(email: string, password: string): { success: boolean; user?: UserProfile; error?: string } {
   const users = loadRegisteredUsers();
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Special shortcut / default matching
   const account = users.find(u => u.profile.email.toLowerCase() === normalizedEmail);
 
   if (!account) {
-    // If attempting demo email or demo login
-    if (normalizedEmail.includes('demo') || normalizedEmail.includes('aarav')) {
-      return { success: true, user: DEFAULT_DEMO_USER };
-    }
-    return { success: false, error: 'No account found with this email. Please check credentials or create an account.' };
+    return { 
+      success: false, 
+      error: 'Incorrect email or password. Please check your credentials and try again.' 
+    };
   }
 
-  // Validate password requirement
-  if (password.length < 4) {
-    return { success: false, error: 'Password must be at least 4 characters.' };
+  // Verify password against stored password representation
+  if (account.passwordHash && password !== account.passwordHash) {
+    return { 
+      success: false, 
+      error: 'Incorrect email or password. Please check your credentials and try again.' 
+    };
   }
 
   return { success: true, user: account.profile };
 }
 
 /**
- * Create New Account (Local Demo Auth Provider)
+ * Create New Account
  */
 export function createAccount(
   fullName: string,
@@ -167,7 +205,7 @@ export function createAccount(
 
   const newAccount: StoredUserAccount = {
     profile: newUser,
-    passwordHash: 'demo_password_hash'
+    passwordHash: password
   };
 
   users.push(newAccount);
@@ -177,7 +215,7 @@ export function createAccount(
 }
 
 /**
- * Quick Judge Demo Login Shortcut
+ * Quick Demo Evaluation Shortcut (Explicitly for Developer / Demo Mode)
  */
 export function getJudgeDemoUser(): UserProfile {
   saveAuthSession(DEFAULT_DEMO_USER);

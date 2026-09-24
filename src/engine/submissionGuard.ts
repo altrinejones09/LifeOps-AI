@@ -1,4 +1,4 @@
-import { ApplicationDraft, UserDocument, UserProfile, DiscrepancyItem } from '../types';
+import { ApplicationDraft, UserDocument, UserProfile, DiscrepancyItem, AgentRun } from '../types';
 
 export interface SubmissionGuardCheck {
   id: string;
@@ -16,12 +16,12 @@ export interface SubmissionGuardResult {
 /**
  * CENTRALIZED CONTROLLED SUBMISSION GUARD
  * 
- * Enforces technical preconditions before any mock submission can execute.
- * Checks authenticated user, valid agent run, zero rejected fields, explicit approvals,
- * and user declaration authorization.
+ * Enforces strict technical preconditions before any submission can execute.
+ * Verifies active session, zero rejected fields, explicit approvals, valid declaration,
+ * zero critical discrepancies, and open deadline status.
  */
 export function evaluateSubmissionGuard(
-  hasValidRun: boolean,
+  hasValidRun: boolean | AgentRun | null,
   application: ApplicationDraft | null,
   documents: UserDocument[] = [],
   user?: UserProfile | null,
@@ -36,21 +36,11 @@ export function evaluateSubmissionGuard(
     label: 'Authenticated Operations User',
     passed: isAuthenticated,
     reason: isAuthenticated
-      ? `Authenticated user "${user?.fullName}" authorized for submission.`
-      : 'Submission blocked: User must be signed into an active account.'
+      ? `Authenticated user "${user?.fullName}" authorized.`
+      : 'Submission blocked: Active user authentication required.'
   });
 
-  // Check 2: Valid Agent Run active
-  checks.push({
-    id: 'guard-agent-run',
-    label: 'Valid Agent Run Active',
-    passed: hasValidRun,
-    reason: hasValidRun 
-      ? 'Workflow plan initialized and verified.' 
-      : 'No active Agent Run found for this application draft.'
-  });
-
-  // Check 3: Valid Application draft exists
+  // Check 2: Valid Application draft exists
   const hasApp = !!application;
   checks.push({
     id: 'guard-app-exists',
@@ -61,19 +51,45 @@ export function evaluateSubmissionGuard(
       : 'No draft application found.'
   });
 
+  // Check 3: Valid Agent Run active & bound to target Application
+  let isRunValid = false;
+  let runReason = 'No active Agent Run found for this application draft.';
+
+  if (typeof hasValidRun === 'boolean') {
+    isRunValid = hasValidRun;
+    runReason = hasValidRun ? 'Workflow plan initialized and verified.' : 'No active Agent Run found for this application draft.';
+  } else if (hasValidRun && typeof hasValidRun === 'object') {
+    const run = hasValidRun as any;
+    const isAppBound = !run.applicationId || !application?.id || run.applicationId === application.id || run.summary?.applicationDraftId === application.id;
+    if (!isAppBound) {
+      isRunValid = false;
+      runReason = 'This application is not linked to the active workflow.';
+    } else {
+      isRunValid = run.status !== 'IDLE';
+      runReason = isRunValid ? 'Workflow plan initialized and linked to active application.' : 'Agent run is idle.';
+    }
+  }
+
+  checks.push({
+    id: 'guard-agent-run',
+    label: 'Agent Plan Initialized & Bound to Application',
+    passed: isRunValid,
+    reason: runReason
+  });
+
   // Check 4: No Unresolved Critical Discrepancies
   const unacknowledgedCritical = discrepancies.filter(d => !d.acknowledged && d.status === 'critical').length;
   const noCriticalBlockers = unacknowledgedCritical === 0;
   checks.push({
     id: 'guard-verification-blockers',
-    label: 'No Unresolved Critical Discrepancies',
+    label: 'Zero Unresolved Critical Discrepancies',
     passed: noCriticalBlockers,
     reason: noCriticalBlockers
       ? 'Zero unresolved critical verification blockers.'
-      : `${unacknowledgedCritical} critical identity discrepancy must be acknowledged or corrected.`
+      : `${unacknowledgedCritical} critical identity discrepancy must be resolved or acknowledged.`
   });
 
-  // Check 5: No Rejected Fields & All Fields Approved
+  // Check 5: Zero Rejected Fields & All Fields Approved
   const rejectedField = hasApp ? application.fields.find(f => f.approvalStatus === 'REJECTED') : null;
   const hasRejectedFields = Boolean(rejectedField);
   const allFieldsApproved = hasApp && application.fields.length > 0 && application.fields.every(f => f.approved && f.approvalStatus !== 'REJECTED');
@@ -84,21 +100,21 @@ export function evaluateSubmissionGuard(
     label: 'Field-Level Human Approval & Zero Rejections',
     passed: !hasRejectedFields && allFieldsApproved,
     reason: hasRejectedFields
-      ? `Field "${rejectedField?.label}" was rejected by user. Rejected fields can NEVER be submitted.`
+      ? `Field "${rejectedField?.label}" was rejected. Rejected fields CANNOT be submitted.`
       : allFieldsApproved 
-        ? `All ${application?.fields.length} prepared fields explicitly approved by human user.` 
+        ? `All ${application?.fields.length} prepared fields explicitly approved by user.` 
         : `${unapprovedCount} prepared fields still require user approval.`
   });
 
-  // Check 6: User declaration signed
+  // Check 6: User legal declaration signed
   const declarationApproved = hasApp && application.userDeclarationApproved;
   checks.push({
     id: 'guard-declaration',
-    label: 'Human Authorization Declaration Signed',
+    label: 'Human Declaration & Submission Consent Signed',
     passed: declarationApproved,
     reason: declarationApproved 
-      ? 'Legal accuracy declaration signed by user.' 
-      : 'User declaration has not been authorized.'
+      ? 'Accuracy declaration and submission consent signed by user.' 
+      : 'User submission declaration has not been authorized.'
   });
 
   // Check 7: Application not already submitted
